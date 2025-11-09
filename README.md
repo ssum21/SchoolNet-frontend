@@ -187,28 +187,8 @@ src/
 
 ## 📝 API 연동
 
-백엔드 API: `http://34.239.37.147:8080`
-
 주요 엔드포인트:
 - `POST /api/auth/login` - 로그인
 - `POST /api/auth/register` - 회원가입
 - `GET /api/posts` - 게시글 목록
 - `GET /api/comments/bad` - 악플 목록 (선배 전용)
-
-자세한 API 문서는 백엔드 Swagger UI 참조
-
-## 📄 라이선스
-
-MIT License - 자유롭게 사용 가능
-
-## 👥 팀
-
-SchoolNet 개발팀
-
-## 📞 문의
-
-프로젝트 관련 문의: [GitHub Issues](https://github.com/ssum21/SchoolNet-frontend/issues)
-
----
-
-**만든 사람들과 함께 청소년을 위한 안전한 인터넷 문화를 만들어갑니다.** 🌟
