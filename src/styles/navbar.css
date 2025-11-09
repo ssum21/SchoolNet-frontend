@@ -1,0 +1,190 @@
+/* 네비게이션 바 스타일 */
+
+.navbar {
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  background: white;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+}
+
+/* 브랜드 */
+.navbar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 20px;
+  color: var(--primary);
+  transition: all 0.2s;
+}
+
+.navbar-brand:hover {
+  opacity: 0.8;
+  transform: scale(1.05);
+}
+
+.brand-icon {
+  font-size: 24px;
+}
+
+.brand-logo {
+  height: 32px;
+  width: auto;
+  object-fit: contain;
+}
+
+.brand-text {
+  background: var(--gradient);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 메뉴 */
+.navbar-menu {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  margin-left: 40px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  text-decoration: none;
+  color: #4b5563;
+  font-weight: 500;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.nav-item:hover {
+  background: #f3f4f6;
+  color: #1f2937;
+}
+
+.nav-item-primary {
+  background: var(--gradient);
+  color: white;
+}
+
+.nav-item-primary:hover {
+  background: var(--gradient-hover);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 69, 0, 0.4);
+}
+
+.nav-icon {
+  font-size: 16px;
+}
+
+/* 액션 버튼 */
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  background: #f9fafb;
+  border-radius: 8px;
+}
+
+.user-name {
+  font-weight: 600;
+  color: #1f2937;
+  font-size: 14px;
+}
+
+.senior-tag {
+  background: var(--gradient);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.nav-btn {
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.nav-btn-text {
+  background: transparent;
+  color: #6b7280;
+}
+
+.nav-btn-text:hover {
+  color: #1f2937;
+  background: #f3f4f6;
+}
+
+.nav-btn-outline {
+  background: white;
+  color: var(--primary);
+  border: 1px solid var(--primary);
+}
+
+.nav-btn-outline:hover {
+  background: var(--primary);
+  color: white;
+}
+
+.nav-btn-primary {
+  background: var(--gradient);
+  color: white;
+}
+
+.nav-btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(255, 69, 0, 0.4);
+  background: var(--gradient-hover);
+}
+
+/* 반응형 */
+@media (max-width: 768px) {
+  .navbar-container {
+    padding: 0 16px;
+  }
+
+  .navbar-menu {
+    margin-left: 20px;
+  }
+
+  .nav-item span:not(.nav-icon) {
+    display: none;
+  }
+
+  .user-name {
+    display: none;
+  }
+}
