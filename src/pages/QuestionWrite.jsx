@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useCreatePost } from '../lib/hooks'
 import { detectProfanity, analyzeContext, COMMUNITY_GUIDELINES } from '../lib/utils/contentFilter'
@@ -23,7 +23,6 @@ function QuestionWrite() {
   const [showEraser, setShowEraser] = useState(false)
   const [filterMessage, setFilterMessage] = useState('')
   const [showGuidelines, setShowGuidelines] = useState(true)
-  const debounceTimer = useRef(null)
 
   const createPostMutation = useCreatePost()
   const categoryLabelMap = {
@@ -39,9 +38,6 @@ function QuestionWrite() {
   const handleContentChange = (e) => {
     const content = e.target.value
     setFormData((prev) => ({ ...prev, content }))
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current)
-    }
   }
 
   const handleTitleChange = (e) => {

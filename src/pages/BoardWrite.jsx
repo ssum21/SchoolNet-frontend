@@ -81,17 +81,7 @@ function BoardWrite() {
   }
 
   const handleTitleChange = (event) => {
-    const nextTitle = event.target.value
-    setTitle(nextTitle)
-
-    if (nextTitle.length > 3) {
-      const result = detectProfanity(nextTitle)
-      if (result.severity === 'blocked') {
-        setFilterMessage('제목에 부적절한 내용이 포함되어 있습니다.')
-        setShowEraser(true)
-        setTimeout(() => setShowEraser(false), 2000)
-      }
-    }
+    setTitle(event.target.value)
   }
 
   const handleContentChange = (event) => {
