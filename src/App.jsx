@@ -5,6 +5,8 @@ import QuestionList from './pages/QuestionList'
 import QuestionDetail from './pages/QuestionDetail'
 import QuestionWrite from './pages/QuestionWrite'
 import Board from './pages/Board'
+import BoardDetail from './pages/BoardDetail'
+import BoardWrite from './pages/BoardWrite'
 import Login from './pages/Login'
 import Register from './pages/Register'
 import SeniorVerify from './pages/SeniorVerify'
@@ -26,6 +28,8 @@ function App() {
 
         {/* 게시판 라우트 */}
         <Route path="/board/:type" element={<Board />} />
+        <Route path="/board/:type/:id" element={<BoardDetail />} />
+        <Route path="/board/:type/write" element={<BoardWrite />} />
 
         {/* 안전 관리 */}
         <Route path="/dashboard/bad-comments" element={<BadCommentsDashboard />} />

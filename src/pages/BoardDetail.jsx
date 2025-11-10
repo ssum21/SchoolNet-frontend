@@ -4,19 +4,50 @@ import { apiClient, getErrorMessage } from '../lib/api'
 import { useAuthStore } from '../lib/store/auth'
 import '../styles/board-detail.css'
 
-const QUESTION_BOARD = {
-  name: '질문게시판',
-  icon: '❓',
-  color: '#6366f1',
-  desc: '궁금한 점을 올리고 댓글로 답변을 받을 수 있어요.'
+const boardInfo = {
+  exam: {
+    name: '족보게시판',
+    icon: '📝',
+    color: '#3b82f6'
+  },
+  talk: {
+    name: '잡담게시판',
+    icon: '💭',
+    color: '#10b981'
+  },
+  meeting: {
+    name: '모임게시판',
+    icon: '🤝',
+    color: '#f59e0b'
+  }
 }
 
-function QuestionDetail() {
-  const { id } = useParams()
+const formatRelativeTime = (timestamp) => {
+  if (!timestamp) return ''
+
+  const created = new Date(timestamp)
+  if (Number.isNaN(created.getTime())) return timestamp
+
+  const now = new Date()
+  const diffSeconds = Math.floor((now.getTime() - created.getTime()) / 1000)
+
+  if (diffSeconds < 60) return `${diffSeconds}초 전`
+  if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}분 전`
+  if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}시간 전`
+  if (diffSeconds < 86400 * 7) return `${Math.floor(diffSeconds / 86400)}일 전`
+
+  return created.toLocaleDateString('ko-KR')
+}
+
+function BoardDetail() {
+  const { type = 'exam', id } = useParams()
   const navigate = useNavigate()
+
+  const currentBoard = useMemo(() => boardInfo[type] || boardInfo.exam, [type])
+
   const userId = useAuthStore((state) => state.userId) || localStorage.getItem('userId')
-  const token = localStorage.getItem('token')
   const isSenior = localStorage.getItem('isSeniorVerified') === 'true'
+  const token = localStorage.getItem('token')
 
   const [post, setPost] = useState(null)
   const [comments, setComments] = useState([])
@@ -25,26 +56,6 @@ function QuestionDetail() {
   const [commentContent, setCommentContent] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
 
-  const formatRelativeTime = useMemo(
-    () => (timestamp) => {
-      if (!timestamp) return ''
-
-      const created = new Date(timestamp)
-      if (Number.isNaN(created.getTime())) return timestamp
-
-      const now = new Date()
-      const diffSeconds = Math.floor((now.getTime() - created.getTime()) / 1000)
-
-      if (diffSeconds < 60) return `${diffSeconds}초 전`
-      if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}분 전`
-      if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}시간 전`
-      if (diffSeconds < 86400 * 7) return `${Math.floor(diffSeconds / 86400)}일 전`
-
-      return created.toLocaleDateString('ko-KR')
-    },
-    []
-  )
-
   useEffect(() => {
     const fetchPost = async () => {
       setLoadingPost(true)
@@ -52,46 +63,66 @@ function QuestionDetail() {
         const response = await apiClient.get(`/api/posts/${id}`)
         const data = response.data
 
-        if (data.boardType && data.boardType !== 'QUESTION') {
-          alert('질문 게시글이 아닙니다.')
-          navigate('/questions', { replace: true })
+        const boardTypeValue = data.boardType || data.board_type
+        if (boardTypeValue && boardTypeValue !== (type || '').toUpperCase()) {
+          navigate(`/board/${type}`, { replace: true })
           return
         }
+
+        const meetingDetails = data.meetingDetails
+        const questionDetails = data.questionDetails
 
         setPost({
           id: data.id,
           title: data.title,
           content: data.content,
+          createdAt: formatRelativeTime(data.createdAt),
           authorName:
             data.authorName ||
             data.author?.username ||
             data.author?.name ||
             '익명',
-          createdAt: formatRelativeTime(data.createdAt),
-          categoryName: data.questionDetails?.categoryName || '질문',
-          isForSeniorsOnly: data.questionDetails?.forSeniorsOnly ?? false,
-          viewCount: data.questionDetails?.viewCount ?? data.viewCount ?? 0,
-          isBad: data.isBad ?? data.bad ?? false
+          isBad: data.isBad ?? data.bad ?? false,
+          categoryName: questionDetails?.categoryName,
+          isForSeniorsOnly: questionDetails?.forSeniorsOnly ?? false,
+          viewCount: questionDetails?.viewCount ?? data.viewCount ?? 0,
+          meetingInfo: meetingDetails
+            ? {
+                schedule: meetingDetails.schedule,
+                scheduleDisplay: meetingDetails.schedule
+                  ? new Date(meetingDetails.schedule).toLocaleString('ko-KR')
+                  : '-',
+                location: meetingDetails.location,
+                capacity: meetingDetails.capacity,
+                currentParticipants: meetingDetails.currentParticipants ?? 0
+              }
+            : null,
+          questionInfo: questionDetails
+            ? {
+                categoryName: questionDetails.categoryName || '질문',
+                isForSeniorsOnly: questionDetails.forSeniorsOnly ?? false
+              }
+            : null
         })
       } catch (error) {
-        console.error('질문 조회 실패:', error)
+        console.error('게시글 조회 실패:', error)
         alert(getErrorMessage(error))
-        navigate('/questions', { replace: true })
+        navigate(`/board/${type}`, { replace: true })
       } finally {
         setLoadingPost(false)
       }
     }
 
     fetchPost()
-  }, [formatRelativeTime, id, navigate])
+  }, [id, navigate, type])
 
   useEffect(() => {
     const fetchComments = async () => {
       setLoadingComments(true)
       try {
         const response = await apiClient.get('/api/comments')
-        const data = Array.isArray(response.data) ? response.data : []
 
+        const data = Array.isArray(response.data) ? response.data : []
         const filtered = data
           .filter((item) => String(item.post?.id || item.postId) === String(id))
           .filter((item) => !(item.isBad ?? item.bad ?? false))
@@ -116,7 +147,7 @@ function QuestionDetail() {
     }
 
     fetchComments()
-  }, [formatRelativeTime, id])
+  }, [id])
 
   const handleCommentSubmit = async (event) => {
     event.preventDefault()
@@ -151,7 +182,8 @@ function QuestionDetail() {
       })
 
       setCommentContent('')
-
+      alert('댓글이 등록되었습니다.')
+      // refresh comments
       const response = await apiClient.get('/api/comments')
       const data = Array.isArray(response.data) ? response.data : []
       const filtered = data
@@ -184,7 +216,7 @@ function QuestionDetail() {
         <div className="page-container page-narrow">
           <div className="loading-state">
             <div className="spinner"></div>
-            <p>질문을 불러오는 중입니다...</p>
+            <p>게시글을 불러오는 중입니다...</p>
           </div>
         </div>
       </div>
@@ -196,9 +228,9 @@ function QuestionDetail() {
       <div className="board-detail-page">
         <div className="page-container page-narrow">
           <div className="empty-state card">
-            <h3 className="empty-title">질문을 찾을 수 없습니다.</h3>
-            <Link to="/questions" className="btn btn-primary">
-              질문 목록으로 돌아가기
+            <h3 className="empty-title">게시글을 찾을 수 없습니다.</h3>
+            <Link to={`/board/${type}`} className="btn btn-primary">
+              게시판으로 돌아가기
             </Link>
           </div>
         </div>
@@ -210,12 +242,12 @@ function QuestionDetail() {
     <div className="board-detail-page">
       <div className="page-container page-narrow">
         <div className="board-detail-header">
-          <Link to="/questions" className="back-link">
-            ← 질문 목록으로
+          <Link to={`/board/${type}`} className="back-link">
+            ← {currentBoard.name} 목록으로
           </Link>
           <div className="header-meta">
-            <div className="board-icon-large" style={{ background: QUESTION_BOARD.color }}>
-              {QUESTION_BOARD.icon}
+            <div className="board-icon-large" style={{ background: currentBoard.color }}>
+              {currentBoard.icon}
             </div>
             <div>
               <h1 className="detail-title">{post.title}</h1>
@@ -223,18 +255,34 @@ function QuestionDetail() {
                 <span className="detail-author">{post.authorName}</span>
                 <span className="meta-divider">•</span>
                 <span className="detail-date">{post.createdAt}</span>
-                <span className="meta-divider">•</span>
-                <span className="detail-date">{post.categoryName}</span>
-                {post.isForSeniorsOnly && (
-                  <>
-                    <span className="meta-divider">•</span>
-                    <span className="detail-date">선배 전용 질문</span>
-                  </>
-                )}
               </div>
             </div>
           </div>
         </div>
+
+        {type === 'meeting' && post.meetingInfo && (
+          <div className="card meeting-summary-card">
+            <h2 className="section-title">모임 정보</h2>
+            <ul className="meeting-summary-list">
+              <li>
+                <strong>일정</strong>
+                <span>{post.meetingInfo.scheduleDisplay}</span>
+              </li>
+              <li>
+                <strong>장소</strong>
+                <span>{post.meetingInfo.location || '미정'}</span>
+              </li>
+              {post.meetingInfo.capacity && (
+                <li>
+                  <strong>모집 인원</strong>
+                  <span>
+                    {post.meetingInfo.currentParticipants ?? 0} / {post.meetingInfo.capacity} 명
+                  </span>
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
 
         <article className="detail-body card">
           <p className="detail-content">{post.content}</p>
@@ -261,7 +309,7 @@ function QuestionDetail() {
                     <span className="comment-author">{comment.authorName}</span>
                     <span className="comment-date">{comment.createdAt}</span>
                   </div>
-                    <p className="comment-content">{comment.content}</p>
+                  <p className="comment-content">{comment.content}</p>
                 </li>
               ))}
             </ul>
@@ -282,7 +330,9 @@ function QuestionDetail() {
           )}
 
           {isSenior && (
-            <div className="notice warning">선배님은 댓글 작성이 제한됩니다.</div>
+            <div className="notice warning">
+              선배님은 댓글 작성이 제한됩니다.
+            </div>
           )}
 
           <form onSubmit={handleCommentSubmit}>
@@ -309,4 +359,5 @@ function QuestionDetail() {
   )
 }
 
-export default QuestionDetail
+export default BoardDetail
+

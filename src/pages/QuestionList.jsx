@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
-import axios from '../api/axios'
+import { apiClient, getErrorMessage } from '../lib/api'
 import SeniorBadge from '../components/SeniorBadge'
 import '../styles/questionlist.css'
 
@@ -18,57 +18,82 @@ function QuestionList() {
   const schoolId = searchParams.get('schoolId') || 1
   const categoryId = searchParams.get('categoryId')
 
+  const formatRelativeTime = useMemo(
+    () => (timestamp) => {
+      if (!timestamp) return ''
+
+      const created = new Date(timestamp)
+      if (Number.isNaN(created.getTime())) return timestamp
+
+      const now = new Date()
+      const diffSeconds = Math.floor((now.getTime() - created.getTime()) / 1000)
+
+      if (diffSeconds < 60) return `${diffSeconds}초 전`
+      if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}분 전`
+      if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}시간 전`
+      if (diffSeconds < 86400 * 7) return `${Math.floor(diffSeconds / 86400)}일 전`
+
+      return created.toLocaleDateString('ko-KR')
+    },
+    []
+  )
+
   useEffect(() => {
     fetchQuestions()
   }, [schoolId, categoryId, page, sortBy])
 
+  const mapSortParam = (value) => {
+    switch (value) {
+      case 'popular':
+        return 'popular'
+      case 'mostAnswered':
+        return 'mostAnswered'
+      default:
+        return 'latest'
+    }
+  }
+
   const fetchQuestions = async () => {
     try {
       setLoading(true)
-      // 임시 데이터
-      const mockQuestions = [
-        {
-          id: 1,
-          title: '중학교 수학 문제 도와주세요',
-          content: '이차방정식 푸는 방법을 모르겠어요. 근의 공식은 어떻게 사용하나요?',
-          authorName: '김학생',
-          isAuthorSenior: false,
-          categoryName: '수학',
-          viewCount: 234,
-          answerCount: 12,
-          isForSeniorsOnly: false,
-          createdAt: '2024-01-15T10:30:00'
-        },
-        {
-          id: 2,
-          title: '친구관계 고민이 있어요',
-          content: '요즘 친구들과 잘 지내는 방법이 궁금해요',
-          authorName: '익명',
-          isAuthorSenior: false,
-          categoryName: '친구관계',
-          viewCount: 189,
-          answerCount: 8,
-          isForSeniorsOnly: true,
-          createdAt: '2024-01-14T15:20:00'
-        },
-        {
-          id: 3,
-          title: '영어 단어 암기 팁',
-          content: '영어 단어를 효과적으로 암기하는 방법이 있을까요?',
-          authorName: '이학생',
-          isAuthorSenior: false,
-          categoryName: '영어',
-          viewCount: 156,
-          answerCount: 15,
-          isForSeniorsOnly: false,
-          createdAt: '2024-01-14T09:00:00'
+      const response = await apiClient.get('/api/posts', {
+        params: {
+          boardType: 'QUESTION',
+          sort: mapSortParam(sortBy),
+          page,
+          categoryId,
+          schoolId
         }
-      ]
+      })
 
-      setQuestions(mockQuestions)
-      setLoading(false)
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.content ?? []
+
+      const normalized = data
+        .filter((item) => !(item.isBad ?? item.bad ?? false))
+        .map((item) => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          authorName:
+            item.authorName ||
+            item.author?.username ||
+            item.author?.name ||
+            '익명',
+          isAuthorSenior: item.author?.isSeniorVerified ?? false,
+          categoryName: item.questionDetails?.categoryName || '질문',
+          viewCount: item.questionDetails?.viewCount ?? item.viewCount ?? 0,
+          answerCount: item.commentCount ?? 0,
+          isForSeniorsOnly: item.questionDetails?.forSeniorsOnly ?? false,
+          createdAt: item.createdAt
+        }))
+
+      setQuestions(normalized)
     } catch (error) {
       console.error('질문 목록 로딩 실패:', error)
+      alert(getErrorMessage(error))
+    } finally {
       setLoading(false)
     }
   }
@@ -131,7 +156,7 @@ function QuestionList() {
           </div>
         ) : questions.length > 0 ? (
           <div className="questionlist-items">
-            {questions.map(question => (
+            {questions.map((question) => (
               <Link
                 key={question.id}
                 to={`/questions/${question.id}`}
@@ -154,7 +179,7 @@ function QuestionList() {
                   <div className="questionlist-item-author">
                     <span className="author-name">{question.authorName}</span>
                     <span className="author-time">
-                      {new Date(question.createdAt).toLocaleDateString()}
+                      {formatRelativeTime(question.createdAt)}
                     </span>
                   </div>
 
@@ -176,9 +201,7 @@ function QuestionList() {
           <div className="empty-state card">
             <div className="empty-state-icon">📝</div>
             <h3 className="empty-state-title">아직 질문이 없어요</h3>
-            <p className="empty-state-text">
-              첫 질문을 작성해보세요!
-            </p>
+            <p className="empty-state-text">첫 질문을 작성해보세요!</p>
             <Link to="/questions/write" className="btn btn-primary">
               질문 작성하기
             </Link>

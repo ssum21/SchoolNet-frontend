@@ -1,0 +1,177 @@
+.board-write-page {
+  padding-bottom: 4rem;
+}
+
+.board-write-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.board-write-header .back-link {
+  color: var(--color-primary-500);
+  font-weight: 500;
+  text-decoration: none;
+  width: fit-content;
+}
+
+.board-write-header .back-link:hover {
+  text-decoration: underline;
+}
+
+.board-write-header .header-content {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.board-write-title {
+  font-size: 2rem;
+  font-weight: 700;
+  margin: 0 0 0.35rem;
+}
+
+.board-write-description {
+  color: var(--color-gray-500);
+  margin: 0;
+}
+
+.board-write-tip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  background: var(--color-primary-50);
+  color: var(--color-primary-600);
+  border: 1px solid var(--color-primary-100);
+  border-radius: 16px;
+  padding: 0.875rem 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.board-write-tip .tip-icon {
+  font-size: 1.5rem;
+}
+
+.board-write-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 2rem;
+}
+
+.board-write-form .form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.board-write-form label {
+  font-weight: 600;
+  color: var(--color-gray-800);
+}
+
+.board-write-form input[type='text'],
+.board-write-form input[type='number'],
+.board-write-form input[type='datetime-local'],
+.board-write-form textarea {
+  width: 100%;
+  padding: 0.85rem 1rem;
+  border-radius: 12px;
+  border: 1px solid var(--color-gray-200);
+  background: var(--color-white);
+  font-size: 0.95rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.board-write-form input[type='text']:focus,
+.board-write-form input[type='number']:focus,
+.board-write-form input[type='datetime-local']:focus,
+.board-write-form textarea:focus {
+  outline: none;
+  border-color: var(--color-primary-400);
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.board-write-form textarea {
+  resize: vertical;
+  min-height: 220px;
+}
+
+.board-write-form input[type='file'] {
+  padding: 0.35rem 0;
+}
+
+.board-write-form .form-helper {
+  font-size: 0.8rem;
+  color: var(--color-gray-500);
+}
+
+.board-write-form .label-helper {
+  font-size: 0.85rem;
+  color: var(--color-gray-500);
+  font-weight: 400;
+}
+
+.meeting-extra {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+  padding: 1.25rem;
+  border-radius: 16px;
+  background: var(--color-gray-50);
+  border: 1px dashed var(--color-gray-200);
+}
+
+.selected-file {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-gray-50);
+  border: 1px solid var(--color-gray-200);
+  border-radius: 12px;
+  width: fit-content;
+}
+
+.selected-file .file-name {
+  font-size: 0.9rem;
+  color: var(--color-gray-700);
+}
+
+.selected-file .remove-file {
+  border: none;
+  background: none;
+  color: var(--color-gray-500);
+  cursor: pointer;
+  font-size: 0.85rem;
+}
+
+.selected-file .remove-file:hover {
+  color: var(--color-danger-500);
+}
+
+.form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.form-actions .btn {
+  min-width: 120px;
+}
+
+@media (max-width: 768px) {
+  .board-write-form {
+    padding: 1.5rem;
+  }
+
+  .board-write-title {
+    font-size: 1.6rem;
+  }
+
+  .board-write-header .header-content {
+    align-items: flex-start;
+  }
+}
+

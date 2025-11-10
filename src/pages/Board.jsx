@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Link, useParams, useNavigate } from 'react-router-dom'
-import axios from '../api/axios'
+import { apiClient, getErrorMessage } from '../lib/api'
 import '../styles/board.css'
 
 /**
@@ -40,7 +40,7 @@ function Board() {
     }
   }
 
-  const currentBoard = boardInfo[type] || boardInfo.exam
+  const currentBoard = useMemo(() => boardInfo[type] || boardInfo.exam, [type])
 
   useEffect(() => {
     const token = localStorage.getItem('token')
@@ -50,76 +50,96 @@ function Board() {
     fetchPosts()
   }, [type, sortBy])
 
+  const formatRelativeTime = (timestamp) => {
+    if (!timestamp) return ''
+
+    const created = new Date(timestamp)
+    if (Number.isNaN(created.getTime())) {
+      return timestamp
+    }
+
+    const now = new Date()
+    const diffSeconds = Math.floor((now.getTime() - created.getTime()) / 1000)
+
+    if (diffSeconds < 60) return `${diffSeconds}초 전`
+    if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}분 전`
+    if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}시간 전`
+    if (diffSeconds < 86400 * 7) return `${Math.floor(diffSeconds / 86400)}일 전`
+
+    return created.toLocaleDateString('ko-KR')
+  }
+
+  const mapSortParam = (value) => {
+    switch (value) {
+      case 'popular':
+        return 'popular'
+      case 'likes':
+        return 'likes'
+      default:
+        return 'latest'
+    }
+  }
+
   const fetchPosts = async () => {
     setLoading(true)
     try {
-      // 임시 데이터
-      const mockData = {
-        exam: [
-          {
-            id: 1,
-            title: '중간고사 수학 족보 공유합니다',
-            content: '2학년 1학기 중간고사 수학 족보입니다. 많은 도움 되시길!',
-            authorName: '김학생',
-            viewCount: 234,
-            commentCount: 15,
-            likes: 42,
-            createdAt: '2시간 전',
-            hasFile: true
-          },
-          {
-            id: 2,
-            title: '영어 모의고사 기출문제',
-            content: '최근 3년간 영어 모의고사 기출문제 모음입니다',
-            authorName: '이학생',
-            viewCount: 189,
-            commentCount: 8,
-            likes: 31,
-            createdAt: '5시간 전',
-            hasFile: true
-          }
-        ],
-        talk: [
-          {
-            id: 3,
-            title: '오늘 급식 어땠나요?',
-            content: '오늘 치킨이 나왔는데 진짜 맛있었어요 ㅎㅎ',
-            authorName: '박학생',
-            viewCount: 156,
-            commentCount: 23,
-            likes: 18,
-            createdAt: '30분 전'
-          },
-          {
-            id: 4,
-            title: '방학 때 뭐 하고 놀아요?',
-            content: '방학 계획 공유해요!',
-            authorName: '최학생',
-            viewCount: 134,
-            commentCount: 19,
-            likes: 12,
-            createdAt: '1시간 전'
-          }
-        ],
-        meeting: [
-          {
-            id: 5,
-            title: '수학 스터디 모집합니다 (2/4)',
-            content: '중학교 2학년 수학 스터디 같이 하실 분 구합니다',
-            authorName: '정학생',
-            viewCount: 89,
-            commentCount: 12,
-            likes: 8,
-            createdAt: '3시간 전',
-            isMeeting: true
-          }
-        ]
-      }
+      const boardTypeParam = {
+        exam: 'EXAM',
+        talk: 'TALK',
+        meeting: 'MEETING'
+      }[type] || 'EXAM'
 
-      setPosts(mockData[type] || mockData.exam)
-      setLoading(false)
+      const response = await apiClient.get('/api/posts', {
+        params: {
+          sort: mapSortParam(sortBy),
+          boardType: boardTypeParam
+        }
+      })
+
+      const data = Array.isArray(response.data)
+        ? response.data
+        : response.data?.content ?? []
+
+      const normalized = data.map((item) => {
+        const authorName =
+          item.authorName ||
+          item.author?.username ||
+          item.author?.name ||
+          '익명'
+
+        const meetingDetails = item.meetingDetails
+
+        return {
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          authorName,
+          createdAt: formatRelativeTime(item.createdAt),
+          viewCount: item.viewCount ?? 0,
+          commentCount: item.commentCount ?? 0,
+          likes: item.likes ?? 0,
+          hasFile: Boolean(item.hasAttachment),
+          isMeeting: item.boardType === 'MEETING',
+          meetingInfo: meetingDetails
+            ? {
+                schedule: meetingDetails.schedule,
+                location: meetingDetails.location,
+                capacity: meetingDetails.capacity,
+                currentParticipants: meetingDetails.currentParticipants
+              }
+            : null,
+          isBad: item.isBad ?? item.bad ?? false
+        }
+      })
+
+      const filteredPosts = normalized.filter((post) => !post.isBad)
+
+      setPosts(filteredPosts)
     } catch (error) {
       console.error('게시글 로딩 실패:', error)
+      alert(getErrorMessage(error))
+      setPosts([])
+    } finally {
       setLoading(false)
     }
   }

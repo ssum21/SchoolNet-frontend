@@ -12,10 +12,10 @@ function Register() {
     email: '',
     password: '',
     passwordConfirm: '',
-    name: '',
-    schoolId: '',
-    grade: ''
+    username: '',
+    schoolName: ''
   })
+  const [studentCard, setStudentCard] = useState(null)
   const [error, setError] = useState('')
 
   const registerMutation = useRegister()
@@ -36,17 +36,25 @@ function Register() {
       return
     }
 
-    registerMutation.mutate({
-      email: formData.email,
-      password: formData.password,
-      name: formData.name,
-      schoolId: parseInt(formData.schoolId),
-      grade: parseInt(formData.grade)
-    }, {
-      onError: (err) => {
-        setError(err.message || '회원가입에 실패했습니다.')
+    if (!studentCard) {
+      setError('학생증 이미지를 업로드해주세요.')
+      return
+    }
+
+    registerMutation.mutate(
+      {
+        email: formData.email,
+        password: formData.password,
+        username: formData.username,
+        schoolName: formData.schoolName,
+        studentCard
+      },
+      {
+        onError: (err) => {
+          setError(err.message || '회원가입에 실패했습니다.')
+        }
       }
-    })
+    )
   }
 
   // 비밀번호 강도 체크
@@ -107,8 +115,8 @@ function Register() {
                   <input
                     type="text"
                     className="auth-input"
-                    value={formData.name}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  value={formData.username}
+                  onChange={(e) => setFormData({ ...formData, username: e.target.value })}
                     placeholder="이름을 입력하세요"
                     required
                   />
@@ -165,42 +173,34 @@ function Register() {
 
             <div className="auth-form-row">
               <div className="auth-form-group">
-                <label className="auth-label">학교 <span className="required">*</span></label>
+                <label className="auth-label">학교명 <span className="required">*</span></label>
                 <div className="auth-input-wrapper">
                   <span className="input-icon">🏫</span>
-                  <select
-                    className="auth-input auth-select"
-                    value={formData.schoolId}
-                    onChange={(e) => setFormData({ ...formData, schoolId: e.target.value })}
+                  <input
+                    type="text"
+                    className="auth-input"
+                    value={formData.schoolName}
+                    onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
+                    placeholder="(예: 서울초등학교)"
                     required
-                  >
-                    <option value="">학교를 선택하세요</option>
-                    <option value="1">서울초등학교</option>
-                    <option value="2">강남중학교</option>
-                    <option value="3">서초중학교</option>
-                    <option value="4">역삼초등학교</option>
-                  </select>
+                  />
                 </div>
               </div>
 
               <div className="auth-form-group">
-                <label className="auth-label">학년 <span className="required">*</span></label>
-                <div className="auth-input-wrapper">
-                  <span className="input-icon">📚</span>
-                  <select
-                    className="auth-input auth-select"
-                    value={formData.grade}
-                    onChange={(e) => setFormData({ ...formData, grade: e.target.value })}
+                <label className="auth-label">학생증 업로드 <span className="required">*</span></label>
+                <label className="auth-file-upload">
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={(e) => setStudentCard(e.target.files?.[0] ?? null)}
                     required
-                  >
-                    <option value="">학년을 선택하세요</option>
-                    {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((grade) => (
-                      <option key={grade} value={grade}>
-                        {grade}학년
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                  />
+                  <span className="file-upload-button">파일 선택</span>
+                  <span className="file-upload-name">
+                    {studentCard ? studentCard.name : '학생증 이미지를 업로드하세요'}
+                  </span>
+                </label>
               </div>
             </div>
 
