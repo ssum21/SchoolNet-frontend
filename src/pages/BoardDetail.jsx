@@ -3,6 +3,8 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import { apiClient, getErrorMessage } from '../lib/api'
 import { useAuthStore } from '../lib/store/auth'
 import '../styles/board-detail.css'
+import EraserAnimation from '../components/EraserAnimation'
+import { detectProfanity, analyzeContext } from '../lib/utils/contentFilter'
 
 const boardInfo = {
   exam: {
@@ -55,6 +57,8 @@ function BoardDetail() {
   const [loadingComments, setLoadingComments] = useState(true)
   const [commentContent, setCommentContent] = useState('')
   const [submittingComment, setSubmittingComment] = useState(false)
+  const [showEraser, setShowEraser] = useState(false)
+  const [filterMessage, setFilterMessage] = useState('')
 
   useEffect(() => {
     const fetchPost = async () => {
@@ -168,6 +172,17 @@ function BoardDetail() {
       return
     }
 
+    const profanityResult = detectProfanity(commentContent)
+    const contextResult = analyzeContext(commentContent)
+
+    if (profanityResult.severity === 'blocked' || contextResult.toxicityScore > 60) {
+      setFilterMessage('부적절한 언어가 포함되어 있습니다. 선배가 정리했어요.')
+      setShowEraser(true)
+      setCommentContent('')
+      setTimeout(() => setShowEraser(false), 2500)
+      return
+    }
+
     if (!userId) {
       alert('사용자 정보를 확인할 수 없습니다. 다시 로그인해주세요.')
       navigate('/login')
@@ -239,8 +254,9 @@ function BoardDetail() {
   }
 
   return (
-    <div className="board-detail-page">
-      <div className="page-container page-narrow">
+    <>
+      <div className="board-detail-page">
+        <div className="page-container page-narrow">
         <div className="board-detail-header">
           <Link to={`/board/${type}`} className="back-link">
             ← {currentBoard.name} 목록으로
@@ -354,8 +370,10 @@ function BoardDetail() {
             </div>
           </form>
         </section>
+        </div>
       </div>
-    </div>
+      {showEraser && <EraserAnimation message={filterMessage} />}
+    </>
   )
 }
 
