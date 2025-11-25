@@ -1,329 +1,323 @@
-import { useEffect, useMemo, useState } from 'react'
-import { Link, useNavigate, useParams } from 'react-router-dom'
-import { apiClient, getErrorMessage } from '../lib/api'
-import { useAuthStore } from '../lib/store/auth'
-import '../styles/board-detail.css'
-import EraserAnimation from '../components/EraserAnimation'
-import { detectProfanity, analyzeContext } from '../lib/utils/contentFilter'
+import { useState, useEffect } from 'react'
+import { useParams, Link, useNavigate } from 'react-router-dom'
+import axios from '../api/axios'
+import SeniorBadge from '../components/SeniorBadge'
+import CommentForm from '../components/CommentForm'
+import AIBotAnswer from '../components/AIBotAnswer'
+import '../styles/questiondetail.css'
 
-const QUESTION_BOARD = {
-  name: '질문게시판',
-  icon: '❓',
-  color: '#6366f1',
-  desc: '궁금한 점을 올리고 댓글로 답변을 받을 수 있어요.'
-}
-
+/**
+ * 질문 상세 페이지 - Reddit 스타일
+ * 질문 내용, 답변 목록, 답변 작성
+ */
 function QuestionDetail() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const userId = useAuthStore((state) => state.userId) || localStorage.getItem('userId')
-  const token = localStorage.getItem('token')
-  const isSenior = localStorage.getItem('isSeniorVerified') === 'true'
-
-  const [post, setPost] = useState(null)
-  const [comments, setComments] = useState([])
-  const [loadingPost, setLoadingPost] = useState(true)
-  const [loadingComments, setLoadingComments] = useState(true)
-  const [commentContent, setCommentContent] = useState('')
-  const [submittingComment, setSubmittingComment] = useState(false)
-  const [showEraser, setShowEraser] = useState(false)
-  const [filterMessage, setFilterMessage] = useState('')
-
-  const formatRelativeTime = useMemo(
-    () => (timestamp) => {
-      if (!timestamp) return ''
-
-      const created = new Date(timestamp)
-      if (Number.isNaN(created.getTime())) return timestamp
-
-      const now = new Date()
-      const diffSeconds = Math.floor((now.getTime() - created.getTime()) / 1000)
-
-      if (diffSeconds < 60) return `${diffSeconds}초 전`
-      if (diffSeconds < 3600) return `${Math.floor(diffSeconds / 60)}분 전`
-      if (diffSeconds < 86400) return `${Math.floor(diffSeconds / 3600)}시간 전`
-      if (diffSeconds < 86400 * 7) return `${Math.floor(diffSeconds / 86400)}일 전`
-
-      return created.toLocaleDateString('ko-KR')
-    },
-    []
-  )
+  const [question, setQuestion] = useState(null)
+  const [answers, setAnswers] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [seniorMode, setSeniorMode] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState(null)
 
   useEffect(() => {
-    const fetchPost = async () => {
-      setLoadingPost(true)
-      try {
-        const response = await apiClient.get(`/api/posts/${id}`)
-        const data = response.data
+    // 현재 로그인한 사용자 ID 가져오기
+    const userId = localStorage.getItem('userId')
+    if (userId) setCurrentUserId(parseInt(userId))
 
-        if (data.boardType && data.boardType !== 'QUESTION') {
-          alert('질문 게시글이 아닙니다.')
-          navigate('/questions', { replace: true })
-          return
+    fetchQuestion()
+    fetchAnswers()
+  }, [id])
+
+  const fetchQuestion = async () => {
+    try {
+      // 실제 API 호출
+      const response = await axios.get(`/api/posts/${id}`)
+      const post = response.data
+
+      // 백엔드 데이터를 프론트엔드 형식으로 변환
+      setQuestion({
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        authorId: post.author?.id,
+        authorName: post.author?.username || '익명',
+        isAuthorSenior: post.author?.userType === 'SENIOR',
+        categoryName: post.questionDetails?.categoryName || '기타',
+        viewCount: post.questionDetails?.viewCount || 0,
+        answerCount: 0, // TODO: 댓글 수 연동
+        isAnonymous: false,
+        isForSeniorsOnly: post.questionDetails?.forSeniorsOnly || false,
+        createdAt: post.createdAt
+      })
+      setLoading(false)
+    } catch (error) {
+      console.error('질문 로딩 실패:', error)
+      setLoading(false)
+    }
+  }
+
+  const fetchAnswers = async () => {
+    try {
+      // 실제 API 호출
+      const response = await axios.get('/api/comments', {
+        params: {
+          postId: id
         }
+      })
 
-        setPost({
-          id: data.id,
-          title: data.title,
-          content: data.content,
-          authorName:
-            data.authorName ||
-            data.author?.username ||
-            data.author?.name ||
-            '익명',
-          createdAt: formatRelativeTime(data.createdAt),
-          categoryName: data.questionDetails?.categoryName || '질문',
-          isForSeniorsOnly: data.questionDetails?.forSeniorsOnly ?? false,
-          viewCount: data.questionDetails?.viewCount ?? data.viewCount ?? 0,
-          isBad: data.isBad ?? data.bad ?? false
+      // 백엔드 데이터를 프론트엔드 형식으로 변환 + 좋아요 수 가져오기
+      const formattedAnswers = await Promise.all(
+        response.data.map(async (comment) => {
+          // 각 댓글의 좋아요 수 가져오기
+          let likeCount = 0
+          try {
+            const likeResponse = await axios.get(`/api/comments/${comment.id}/likes`)
+            likeCount = likeResponse.data.likes || 0
+          } catch (e) {
+            // 좋아요 수 조회 실패 시 0으로 설정
+          }
+
+          return {
+            id: comment.id,
+            questionId: comment.postId,
+            userId: comment.author?.id,
+            authorName: comment.author?.username || '익명',
+            isSeniorAnswer: comment.author?.isSeniorVerified || false,
+            content: comment.content,
+            helpfulCount: likeCount,
+            createdAt: comment.createdAt
+          }
         })
-      } catch (error) {
-        console.error('질문 조회 실패:', error)
-        alert(getErrorMessage(error))
-        navigate('/questions', { replace: true })
-      } finally {
-        setLoadingPost(false)
+      )
+
+      setAnswers(formattedAnswers)
+    } catch (error) {
+      console.error('답변 로딩 실패:', error)
+      setAnswers([])
+    }
+  }
+
+  const handleAnswerSubmit = async (content) => {
+    try {
+      await axios.post('/api/comments', {
+        postId: id,
+        content
+      })
+      fetchAnswers()
+    } catch (error) {
+      console.error('답변 작성 실패:', error)
+      alert('답변 작성에 실패했습니다.')
+    }
+  }
+
+  const handleHelpful = async (answerId) => {
+    try {
+      const response = await axios.post(`/api/comments/${answerId}/like`)
+      // 즉시 UI 업데이트
+      setAnswers(prev => prev.map(answer =>
+        answer.id === answerId
+          ? { ...answer, helpfulCount: response.data.likes }
+          : answer
+      ))
+    } catch (error) {
+      console.error('도움됨 처리 실패:', error)
+      if (error.response?.status === 401) {
+        alert('로그인이 필요합니다.')
+      } else {
+        alert('좋아요 처리에 실패했습니다.')
       }
     }
+  }
 
-    fetchPost()
-  }, [formatRelativeTime, id, navigate])
-
-  useEffect(() => {
-    const fetchComments = async () => {
-      setLoadingComments(true)
-      try {
-        const response = await apiClient.get('/api/comments')
-        const data = Array.isArray(response.data) ? response.data : []
-
-        const filtered = data
-          .filter((item) => String(item.post?.id || item.postId) === String(id))
-          .filter((item) => !(item.isBad ?? item.bad ?? false))
-          .map((item) => ({
-            id: item.id,
-            content: item.content,
-            authorName:
-              item.authorName ||
-              item.author?.username ||
-              item.author?.name ||
-              '익명',
-            createdAt: formatRelativeTime(item.createdAt)
-          }))
-
-        setComments(filtered)
-      } catch (error) {
-        console.error('댓글 조회 실패:', error)
-        alert(getErrorMessage(error))
-      } finally {
-        setLoadingComments(false)
-      }
-    }
-
-    fetchComments()
-  }, [formatRelativeTime, id])
-
-  const handleCommentSubmit = async (event) => {
-    event.preventDefault()
-
-    if (!token) {
-      alert('로그인이 필요합니다.')
-      navigate('/login')
-      return
-    }
-
-    if (isSenior) {
-      alert('선배님은 댓글 작성이 제한됩니다.')
-      return
-    }
-
-    if (!commentContent.trim()) {
-      alert('댓글 내용을 입력해주세요.')
-      return
-    }
-
-    const profanityResult = detectProfanity(commentContent)
-    const contextResult = analyzeContext(commentContent)
-
-    if (profanityResult.severity === 'blocked' || contextResult.toxicityScore > 60) {
-      setFilterMessage('부적절한 언어가 포함되어 있습니다. 선배가 정리했어요.')
-      setShowEraser(true)
-      setCommentContent('')
-      setTimeout(() => setShowEraser(false), 2500)
-      return
-    }
-
-    if (!userId) {
-      alert('사용자 정보를 확인할 수 없습니다. 다시 로그인해주세요.')
-      navigate('/login')
+  const handleDelete = async () => {
+    if (!window.confirm('정말로 이 질문을 삭제하시겠습니까?')) {
       return
     }
 
     try {
-      setSubmittingComment(true)
-      await apiClient.post('/api/comments', {
-        content: commentContent.trim(),
-        postId: Number(id)
-      })
-
-      setCommentContent('')
-
-      const response = await apiClient.get('/api/comments')
-      const data = Array.isArray(response.data) ? response.data : []
-      const filtered = data
-        .filter((item) => String(item.post?.id || item.postId) === String(id))
-        .filter((item) => !(item.isBad ?? item.bad ?? false))
-        .map((item) => ({
-          id: item.id,
-          content: item.content,
-          authorName:
-            item.authorName ||
-            item.author?.username ||
-            item.author?.name ||
-            '익명',
-          createdAt: formatRelativeTime(item.createdAt)
-        }))
-      setComments(filtered)
+      await axios.delete(`/api/posts/${id}`)
+      alert('질문이 삭제되었습니다.')
+      navigate('/questions')
     } catch (error) {
-      console.error('댓글 등록 실패:', error)
-      alert(getErrorMessage(error))
-    } finally {
-      setSubmittingComment(false)
+      console.error('질문 삭제 실패:', error)
+      alert('질문 삭제에 실패했습니다.')
     }
   }
 
-  const canComment = token && !isSenior
-
-  if (loadingPost) {
+  if (loading) {
     return (
-      <div className="board-detail-page">
-        <div className="page-container page-narrow">
-          <div className="loading-state">
-            <div className="spinner"></div>
-            <p>질문을 불러오는 중입니다...</p>
-          </div>
+      <div className="loading">
+        <div className="spinner"></div>
+        <p>질문을 불러오는 중...</p>
+      </div>
+    )
+  }
+
+  if (!question) {
+    return (
+      <div className="page-container page-narrow">
+        <div className="empty-state card">
+          <div className="empty-state-icon">😕</div>
+          <h3 className="empty-state-title">질문을 찾을 수 없습니다</h3>
+          <Link to="/questions" className="btn btn-primary">
+            질문 목록으로
+          </Link>
         </div>
       </div>
     )
   }
 
-  if (!post) {
-    return (
-      <div className="board-detail-page">
-        <div className="page-container page-narrow">
-          <div className="empty-state card">
-            <h3 className="empty-title">질문을 찾을 수 없습니다.</h3>
-            <Link to="/questions" className="btn btn-primary">
-              질문 목록으로 돌아가기
-            </Link>
-          </div>
-        </div>
-      </div>
-    )
-  }
+  const filteredAnswers = seniorMode
+    ? answers.filter(answer => answer.isSeniorAnswer)
+    : answers
+
+  const isAuthor = currentUserId && currentUserId === question?.authorId
 
   return (
-    <>
-      <div className="board-detail-page">
-        <div className="page-container page-narrow">
-        <div className="board-detail-header">
-          <Link to="/questions" className="back-link">
-            ← 질문 목록으로
+    <div className="questiondetail-page">
+      <div className="page-container page-narrow">
+        {/* 상단 네비게이션 */}
+        <div className="detail-breadcrumb">
+          <Link to="/questions" className="breadcrumb-link">
+            ← 질문 목록
           </Link>
-          <div className="header-meta">
-            <div className="board-icon-large" style={{ background: QUESTION_BOARD.color }}>
-              {QUESTION_BOARD.icon}
+        </div>
+
+        {/* 질문 카드 */}
+        <article className="question-detail-card card">
+          <div className="question-detail-header">
+            <div className="question-detail-badges">
+              <span className="badge badge-gray">{question.categoryName}</span>
+              {question.isForSeniorsOnly && (
+                <span className="badge badge-primary">선배전용</span>
+              )}
             </div>
-            <div>
-              <h1 className="detail-title">{post.title}</h1>
-              <div className="detail-meta">
-                <span className="detail-author">{post.authorName}</span>
-                <span className="meta-divider">•</span>
-                <span className="detail-date">{post.createdAt}</span>
-                <span className="meta-divider">•</span>
-                <span className="detail-date">{post.categoryName}</span>
-                {post.isForSeniorsOnly && (
-                  <>
-                    <span className="meta-divider">•</span>
-                    <span className="detail-date">선배 전용 질문</span>
-                  </>
-                )}
-              </div>
+            <div className="question-detail-meta">
+              <span className="meta-item">
+                <span className="meta-icon">👁️</span>
+                {question.viewCount}
+              </span>
+              <span className="meta-item">
+                <span className="meta-icon">💬</span>
+                {answers.length}
+              </span>
             </div>
           </div>
-        </div>
 
-        <article className="detail-body card">
-          <p className="detail-content">{post.content}</p>
+          <h1 className="question-detail-title">{question.title}</h1>
+
+          <div className="question-detail-content">
+            {question.content.split('\n').map((line, i) => (
+              <p key={i}>{line}</p>
+            ))}
+          </div>
+
+          <div className="question-detail-footer">
+            <div className="question-detail-author">
+              <div className="avatar avatar-sm">
+                {question.authorName[0]}
+              </div>
+              <div className="author-info">
+                <div className="author-name-wrapper">
+                  <span className="author-name">{question.authorName}</span>
+                  {question.isAuthorSenior && <SeniorBadge size="small" />}
+                </div>
+                <span className="author-time">
+                  {new Date(question.createdAt).toLocaleString('ko-KR')}
+                </span>
+              </div>
+            </div>
+
+            {/* 삭제 버튼 (작성자만 보임) */}
+            {isAuthor && (
+              <button onClick={handleDelete} className="btn btn-danger btn-sm">
+                삭제
+              </button>
+            )}
+          </div>
         </article>
 
-        <section className="comments-section">
-          <h2 className="section-title">댓글</h2>
+        {/* 선배 전용 모드 */}
+        {question.isForSeniorsOnly && (
+          <div className="senior-mode-toggle">
+            <button
+              className={`toggle-btn ${seniorMode ? 'active' : ''}`}
+              onClick={() => setSeniorMode(!seniorMode)}
+            >
+              <span className="toggle-icon">🎓</span>
+              <span className="toggle-text">
+                {seniorMode ? '전체 답변 보기' : '선배 답변만 보기'}
+              </span>
+            </button>
+          </div>
+        )}
 
-          {loadingComments ? (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <p>댓글을 불러오는 중입니다...</p>
-            </div>
-          ) : comments.length === 0 ? (
-            <div className="empty-state card">
-              <h3 className="empty-title">아직 댓글이 없어요</h3>
-              <p className="empty-text">첫 번째 댓글을 작성해보세요!</p>
+        {/* AI 봇 답변 */}
+        <AIBotAnswer questionId={id} />
+
+        {/* 답변 섹션 */}
+        <section className="answers-section">
+          <div className="answers-header">
+            <h2 className="answers-title">
+              답변 <span className="answers-count">{filteredAnswers.length}</span>
+            </h2>
+          </div>
+
+          {filteredAnswers.length > 0 ? (
+            <div className="answers-list">
+              {filteredAnswers.map(answer => (
+                <article key={answer.id} className="answer-item card">
+                  <div className="answer-content">
+                    {answer.content.split('\n').map((line, i) => (
+                      <p key={i}>{line}</p>
+                    ))}
+                  </div>
+
+                  <div className="answer-footer">
+                    <div className="answer-author">
+                      <div className="avatar avatar-sm">
+                        {answer.authorName[0]}
+                      </div>
+                      <div className="author-info">
+                        <div className="author-name-wrapper">
+                          <span className="author-name">{answer.authorName}</span>
+                          {answer.isSeniorAnswer && <SeniorBadge size="small" />}
+                        </div>
+                        <span className="author-time">
+                          {new Date(answer.createdAt).toLocaleString('ko-KR')}
+                        </span>
+                      </div>
+                    </div>
+
+                    <button
+                      className="btn-helpful"
+                      onClick={() => handleHelpful(answer.id)}
+                    >
+                      <span className="helpful-icon">❤️</span>
+                      <span className="helpful-text">도움이 됐어요</span>
+                      <span className="helpful-count">{answer.helpfulCount}</span>
+                    </button>
+                  </div>
+                </article>
+              ))}
             </div>
           ) : (
-            <ul className="comment-list">
-              {comments.map((comment) => (
-                <li key={comment.id} className="comment-item card">
-                  <div className="comment-header">
-                    <span className="comment-author">{comment.authorName}</span>
-                    <span className="comment-date">{comment.createdAt}</span>
-                  </div>
-                    <p className="comment-content">{comment.content}</p>
-                </li>
-              ))}
-            </ul>
+            <div className="empty-state card">
+              <div className="empty-state-icon">💬</div>
+              <p className="empty-state-text">
+                {seniorMode ? '아직 선배 답변이 없어요' : '아직 답변이 없어요'}
+              </p>
+            </div>
           )}
         </section>
 
-        <section className="comment-form-section card">
-          <h3 className="section-title">댓글 작성</h3>
-
-          {!token && (
-            <div className="notice">
-              댓글을 작성하려면{' '}
-              <button className="link-button" onClick={() => navigate('/login')}>
-                로그인
-              </button>
-              이 필요합니다.
-            </div>
-          )}
-
-          {isSenior && (
-            <div className="notice warning">선배님은 댓글 작성이 제한됩니다.</div>
-          )}
-
-          <form onSubmit={handleCommentSubmit}>
-            <textarea
-              value={commentContent}
-              onChange={(event) => setCommentContent(event.target.value)}
-              placeholder="댓글을 입력해주세요."
-              rows={4}
-              disabled={!canComment || submittingComment}
-            />
-            <div className="form-actions">
-              <button
-                type="submit"
-                className="btn btn-primary"
-                disabled={!canComment || submittingComment}
-              >
-                {submittingComment ? '등록 중...' : '댓글 등록'}
-              </button>
-            </div>
-          </form>
+        {/* 답변 작성 폼 */}
+        <section className="answer-write-section">
+          <h3 className="answer-write-title">답변 작성</h3>
+          <CommentForm onSubmit={handleAnswerSubmit} />
         </section>
-        </div>
       </div>
-      {showEraser && <EraserAnimation message={filterMessage} />}
-    </>
+    </div>
   )
 }
 

@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import axios from '../api/axios'
 import '../styles/positive-reactions.css'
 
 /**
@@ -76,8 +77,12 @@ function PositiveReactions({ contentType, contentId, initialReactions = {} }) {
       const points = reactionTypes[type].points
       showPointsAnimation(points)
 
-      // TODO: API 호출
-      // await reactionsApi.addReaction({ contentType, contentId, type })
+      // API 호출
+      try {
+        await axios.post(`/api/comments/${contentId}/reactions`, { type })
+      } catch (error) {
+        console.error('리액션 추가 실패:', error)
+      }
     }
   }
 

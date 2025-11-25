@@ -20,7 +20,7 @@ function CommentForm({ onSubmit }) {
     // 간단한 실시간 필터링 (실제로는 디바운싱 필요)
     if (value.length > 5) {
       try {
-        const response = await axios.post('/filter/check-realtime', null, {
+        const response = await axios.get('/api/filter/check-realtime', {
           params: { text: value }
         })
 
@@ -47,7 +47,7 @@ function CommentForm({ onSubmit }) {
 
     try {
       // 최종 필터링 체크
-      const filterResponse = await axios.post('/filter/check', {
+      const filterResponse = await axios.post('/api/filter/check', {
         text: content,
         source: 'ANSWER'
       })
