@@ -6,9 +6,14 @@ import axios, { AxiosError, AxiosInstance, InternalAxiosRequestConfig } from 'ax
 import { useAuthStore } from '../store/auth'
 import type { ApiError } from './types'
 
-// Base URL 설정 - 배포 환경에서는 Nginx 프록시 사용
-// 빌드 시점에는 빈 문자열, 런타임에 localhost면 8082 포트 사용
-const BASE_URL = ''
+// Base URL 설정
+const getBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  return `http://${window.location.hostname}:8082`
+}
+const BASE_URL = getBaseUrl()
 
 // Axios 인스턴스 생성
 const apiClient: AxiosInstance = axios.create({

@@ -1,7 +1,14 @@
 import axios from 'axios'
 
-// 배포 환경에서는 Nginx 프록시 사용 (빈 문자열 = 상대 경로)
-const getApiBaseUrl = () => ''
+// API Base URL 설정
+const getApiBaseUrl = () => {
+  // 환경 변수가 설정되어 있으면 사용
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  // 기본값: 현재 호스트의 8082 포트
+  return `http://${window.location.hostname}:8082`
+}
 
 /**
  * Axios 인스턴스 설정
