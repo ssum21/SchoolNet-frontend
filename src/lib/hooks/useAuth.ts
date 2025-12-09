@@ -22,9 +22,10 @@ export const useLogin = () => {
       setAuth(
         token,
         response.userId,
-        response.name,
+        response.username || response.name,
         response.email,
-        response.isSeniorVerified
+        response.isSeniorVerified,
+        response.role || 'STUDENT'
       )
 
       // 홈으로 리다이렉트

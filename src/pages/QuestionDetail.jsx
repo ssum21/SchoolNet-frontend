@@ -4,6 +4,7 @@ import axios from '../api/axios'
 import SeniorBadge from '../components/SeniorBadge'
 import CommentForm from '../components/CommentForm'
 import AIBotAnswer from '../components/AIBotAnswer'
+import PositiveReactions from '../components/PositiveReactions'
 import '../styles/questiondetail.css'
 
 /**
@@ -298,6 +299,12 @@ function QuestionDetail() {
                       <span className="helpful-count">{answer.helpfulCount}</span>
                     </button>
                   </div>
+
+                  {/* 6가지 긍정 리액션 */}
+                  <PositiveReactions
+                    contentType="comment"
+                    contentId={answer.id}
+                  />
                 </article>
               ))}
             </div>
