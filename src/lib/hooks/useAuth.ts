@@ -22,9 +22,10 @@ export const useLogin = () => {
       setAuth(
         token,
         response.userId,
-        response.name,
+        response.username || response.name,
         response.email,
-        response.isSeniorVerified
+        response.isSeniorVerified,
+        response.role || 'STUDENT'
       )
 
       // 홈으로 리다이렉트
@@ -42,27 +43,15 @@ export const useLogin = () => {
  */
 export const useRegister = () => {
   const navigate = useNavigate()
-  const setAuth = useAuthStore((state) => state.setAuth)
 
   return useMutation({
     mutationFn: (data: RegisterRequest) => authApi.register(data),
-    onSuccess: (response) => {
-      // 토큰 저장
-      const token = response.token || response.accessToken || ''
-      setAuth(
-        token,
-        response.userId,
-        response.name,
-        response.email,
-        response.isSeniorVerified
-      )
-
-      // 홈으로 리다이렉트
-      navigate('/')
+    onSuccess: () => {
+      alert('회원가입이 완료되었습니다. 로그인 후 이용해주세요.')
+      navigate('/login')
     },
     onError: (error) => {
       console.error('회원가입 실패:', error)
-      alert(getErrorMessage(error))
     }
   })
 }

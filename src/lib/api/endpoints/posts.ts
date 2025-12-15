@@ -2,7 +2,7 @@
  * 게시물 관련 API 엔드포인트
  */
 import apiClient from '../client'
-import type { Post, CreatePostRequest, LikesResponse, PaginatedResponse } from '../types'
+import type { Post, CreatePostRequest, LikesResponse, PaginatedResponse, PostBoardType } from '../types'
 
 export const postsApi = {
   /**
@@ -14,6 +14,7 @@ export const postsApi = {
     sort?: string
     categoryId?: number
     schoolId?: number
+    boardType?: PostBoardType
   }): Promise<Post[]> => {
     const response = await apiClient.get<Post[] | PaginatedResponse<Post>>('/api/posts', { params })
 

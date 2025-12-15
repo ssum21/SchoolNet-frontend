@@ -10,9 +10,10 @@ interface AuthState {
   userName: string | null
   userEmail: string | null
   isSenior: boolean
+  isAdmin: boolean
   isAuthenticated: boolean
 
-  setAuth: (token: string, userId: string | number, userName: string, email?: string, isSenior?: boolean) => void
+  setAuth: (token: string, userId: string | number, userName: string, email?: string, isSenior?: boolean, role?: string) => void
   clearAuth: () => void
   updateSeniorStatus: (isSenior: boolean) => void
 }
@@ -23,15 +24,18 @@ export const useAuthStore = create<AuthState>((set) => ({
   userName: null,
   userEmail: null,
   isSenior: false,
+  isAdmin: false,
   isAuthenticated: false,
 
-  setAuth: (token, userId, userName, email, isSenior = false) => {
+  setAuth: (token, userId, userName, email, isSenior = false, role = 'STUDENT') => {
+    const isAdmin = role === 'ADMIN'
     set({
       token,
       userId,
       userName,
       userEmail: email,
       isSenior,
+      isAdmin,
       isAuthenticated: true
     })
 
@@ -41,6 +45,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.setItem('userName', userName)
     if (email) localStorage.setItem('userEmail', email)
     localStorage.setItem('isSeniorVerified', String(isSenior))
+    localStorage.setItem('userRole', role)
   },
 
   clearAuth: () => {
@@ -50,6 +55,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       userName: null,
       userEmail: null,
       isSenior: false,
+      isAdmin: false,
       isAuthenticated: false
     })
 
@@ -59,6 +65,7 @@ export const useAuthStore = create<AuthState>((set) => ({
     localStorage.removeItem('userName')
     localStorage.removeItem('userEmail')
     localStorage.removeItem('isSeniorVerified')
+    localStorage.removeItem('userRole')
   },
 
   updateSeniorStatus: (isSenior) => {
@@ -74,8 +81,9 @@ export const initializeAuth = () => {
   const userName = localStorage.getItem('userName')
   const userEmail = localStorage.getItem('userEmail')
   const isSenior = localStorage.getItem('isSeniorVerified') === 'true'
+  const role = localStorage.getItem('userRole') || 'STUDENT'
 
   if (token && userId && userName) {
-    useAuthStore.getState().setAuth(token, userId, userName, userEmail || undefined, isSenior)
+    useAuthStore.getState().setAuth(token, userId, userName, userEmail || undefined, isSenior, role)
   }
 }

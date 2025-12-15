@@ -16,6 +16,8 @@ export interface User {
   updatedAt?: string
 }
 
+export type PostBoardType = 'EXAM' | 'TALK' | 'MEETING' | 'QUESTION'
+
 export interface Post {
   id: number | string
   title: string
@@ -33,6 +35,8 @@ export interface Post {
   isForSeniorsOnly?: boolean
   createdAt?: string
   updatedAt?: string
+  boardType?: PostBoardType
+  isBad?: boolean
 }
 
 export interface Comment {
@@ -70,6 +74,16 @@ export interface CreatePostRequest {
   categoryId?: number
   isAnonymous?: boolean
   isForSeniorsOnly?: boolean
+  boardType: PostBoardType
+  meetingInfo?: {
+    schedule: string
+    location: string
+    capacity?: number
+  }
+  questionInfo?: {
+    categoryName: string
+    isForSeniorsOnly: boolean
+  }
 }
 
 export interface CreateCommentRequest {
@@ -118,7 +132,7 @@ export interface ApiError {
 
 // ============= 유틸리티 타입 =============
 export type SortBy = 'latest' | 'popular' | 'mostAnswered' | 'likes'
-export type BoardType = 'exam' | 'talk' | 'meeting'
+export type BoardType = 'exam' | 'talk' | 'meeting' | 'question'
 
 // Question은 Post와 동일한 구조
 export type Question = Post

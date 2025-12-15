@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import axios from '../api/axios'
 import SeniorBadge from '../components/SeniorBadge'
 import CommentForm from '../components/CommentForm'
 import AIBotAnswer from '../components/AIBotAnswer'
+import PositiveReactions from '../components/PositiveReactions'
 import '../styles/questiondetail.css'
 
 /**
@@ -12,31 +13,42 @@ import '../styles/questiondetail.css'
  */
 function QuestionDetail() {
   const { id } = useParams()
+  const navigate = useNavigate()
   const [question, setQuestion] = useState(null)
   const [answers, setAnswers] = useState([])
   const [loading, setLoading] = useState(true)
   const [seniorMode, setSeniorMode] = useState(false)
+  const [currentUserId, setCurrentUserId] = useState(null)
 
   useEffect(() => {
+    // 현재 로그인한 사용자 ID 가져오기
+    const userId = localStorage.getItem('userId')
+    if (userId) setCurrentUserId(parseInt(userId))
+
     fetchQuestion()
     fetchAnswers()
   }, [id])
 
   const fetchQuestion = async () => {
     try {
-      // 임시 데이터
+      // 실제 API 호출
+      const response = await axios.get(`/api/posts/${id}`)
+      const post = response.data
+
+      // 백엔드 데이터를 프론트엔드 형식으로 변환
       setQuestion({
-        id: 1,
-        title: '중학교 수학 문제 도와주세요',
-        content: '이차방정식 푸는 방법을 모르겠어요. 근의 공식은 어떻게 사용하나요?\n\n특히 판별식이 뭔지 이해가 안 가요. 쉽게 설명해주실 수 있나요?',
-        authorName: '김학생',
-        isAuthorSenior: false,
-        categoryName: '수학',
-        viewCount: 234,
-        answerCount: 12,
+        id: post.id,
+        title: post.title,
+        content: post.content,
+        authorId: post.author?.id,
+        authorName: post.author?.username || '익명',
+        isAuthorSenior: post.author?.userType === 'SENIOR',
+        categoryName: post.questionDetails?.categoryName || '기타',
+        viewCount: post.questionDetails?.viewCount || 0,
+        answerCount: 0, // TODO: 댓글 수 연동
         isAnonymous: false,
-        isForSeniorsOnly: false,
-        createdAt: '2024-01-15T10:30:00'
+        isForSeniorsOnly: post.questionDetails?.forSeniorsOnly || false,
+        createdAt: post.createdAt
       })
       setLoading(false)
     } catch (error) {
@@ -47,48 +59,49 @@ function QuestionDetail() {
 
   const fetchAnswers = async () => {
     try {
-      // 임시 데이터
-      setAnswers([
-        {
-          id: 1,
-          questionId: 1,
-          userId: 2,
-          authorName: '박선배',
-          isSeniorAnswer: true,
-          content: '이차방정식은 ax² + bx + c = 0 형태의 방정식이에요.\n\n근의 공식은 x = (-b ± √(b²-4ac)) / 2a 입니다.\n\n판별식 D = b²-4ac 값에 따라:\n- D > 0: 서로 다른 두 실근\n- D = 0: 중근\n- D < 0: 실근 없음 (허근)\n\n예를 들어 x² - 5x + 6 = 0 이면\na=1, b=-5, c=6\nD = 25 - 24 = 1 > 0 이므로 서로 다른 두 실근을 가져요!',
-          helpfulCount: 15,
-          createdAt: '2024-01-15T11:00:00'
-        },
-        {
-          id: 2,
-          questionId: 1,
-          userId: 3,
-          authorName: '이선배',
-          isSeniorAnswer: true,
-          content: '추가로 설명하자면, 근의 공식을 외우는 팁이 있어요!\n\n"음의 비 플마 루트 비제곱 마이너스 사에이씨 분의 투에이"\n이렇게 읊조리면서 외우면 좋아요 ㅎㅎ',
-          helpfulCount: 8,
-          createdAt: '2024-01-15T11:30:00'
-        },
-        {
-          id: 3,
-          questionId: 1,
-          userId: 4,
-          authorName: '최학생',
-          isSeniorAnswer: false,
-          content: '저도 이거 궁금했는데 감사합니다!',
-          helpfulCount: 2,
-          createdAt: '2024-01-15T12:00:00'
+      // 실제 API 호출
+      const response = await axios.get('/api/comments', {
+        params: {
+          postId: id
         }
-      ])
+      })
+
+      // 백엔드 데이터를 프론트엔드 형식으로 변환 + 좋아요 수 가져오기
+      const formattedAnswers = await Promise.all(
+        response.data.map(async (comment) => {
+          // 각 댓글의 좋아요 수 가져오기
+          let likeCount = 0
+          try {
+            const likeResponse = await axios.get(`/api/comments/${comment.id}/likes`)
+            likeCount = likeResponse.data.likes || 0
+          } catch (e) {
+            // 좋아요 수 조회 실패 시 0으로 설정
+          }
+
+          return {
+            id: comment.id,
+            questionId: comment.postId,
+            userId: comment.author?.id,
+            authorName: comment.author?.username || '익명',
+            isSeniorAnswer: comment.author?.isSeniorVerified || false,
+            content: comment.content,
+            helpfulCount: likeCount,
+            createdAt: comment.createdAt
+          }
+        })
+      )
+
+      setAnswers(formattedAnswers)
     } catch (error) {
       console.error('답변 로딩 실패:', error)
+      setAnswers([])
     }
   }
 
   const handleAnswerSubmit = async (content) => {
     try {
-      await axios.post('/answers', {
-        questionId: id,
+      await axios.post('/api/comments', {
+        postId: id,
         content
       })
       fetchAnswers()
@@ -100,10 +113,35 @@ function QuestionDetail() {
 
   const handleHelpful = async (answerId) => {
     try {
-      await axios.post(`/answers/${answerId}/helpful`)
-      fetchAnswers()
+      const response = await axios.post(`/api/comments/${answerId}/like`)
+      // 즉시 UI 업데이트
+      setAnswers(prev => prev.map(answer =>
+        answer.id === answerId
+          ? { ...answer, helpfulCount: response.data.likes }
+          : answer
+      ))
     } catch (error) {
       console.error('도움됨 처리 실패:', error)
+      if (error.response?.status === 401) {
+        alert('로그인이 필요합니다.')
+      } else {
+        alert('좋아요 처리에 실패했습니다.')
+      }
+    }
+  }
+
+  const handleDelete = async () => {
+    if (!window.confirm('정말로 이 질문을 삭제하시겠습니까?')) {
+      return
+    }
+
+    try {
+      await axios.delete(`/api/posts/${id}`)
+      alert('질문이 삭제되었습니다.')
+      navigate('/questions')
+    } catch (error) {
+      console.error('질문 삭제 실패:', error)
+      alert('질문 삭제에 실패했습니다.')
     }
   }
 
@@ -133,6 +171,8 @@ function QuestionDetail() {
   const filteredAnswers = seniorMode
     ? answers.filter(answer => answer.isSeniorAnswer)
     : answers
+
+  const isAuthor = currentUserId && currentUserId === question?.authorId
 
   return (
     <div className="questiondetail-page">
@@ -188,6 +228,13 @@ function QuestionDetail() {
                 </span>
               </div>
             </div>
+
+            {/* 삭제 버튼 (작성자만 보임) */}
+            {isAuthor && (
+              <button onClick={handleDelete} className="btn btn-danger btn-sm">
+                삭제
+              </button>
+            )}
           </div>
         </article>
 
@@ -252,6 +299,12 @@ function QuestionDetail() {
                       <span className="helpful-count">{answer.helpfulCount}</span>
                     </button>
                   </div>
+
+                  {/* 6가지 긍정 리액션 */}
+                  <PositiveReactions
+                    contentType="comment"
+                    contentId={answer.id}
+                  />
                 </article>
               ))}
             </div>

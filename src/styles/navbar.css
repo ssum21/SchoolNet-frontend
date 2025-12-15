@@ -127,6 +127,15 @@
   font-weight: 600;
 }
 
+.admin-tag {
+  background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+  color: white;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
 .nav-btn {
   padding: 8px 16px;
   border-radius: 8px;

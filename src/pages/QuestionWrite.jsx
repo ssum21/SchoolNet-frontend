@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from 'react'
+import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useCreatePost } from '../lib/hooks'
 import { detectProfanity, analyzeContext, COMMUNITY_GUIDELINES } from '../lib/utils/contentFilter'
@@ -11,74 +11,38 @@ import '../styles/questionwrite.css'
  */
 function QuestionWrite() {
   const navigate = useNavigate()
-  const [formData, setFormData] = useState({
+  const initialForm = {
     categoryId: '',
     title: '',
     content: '',
     isAnonymous: false,
     isForSeniorsOnly: false
-  })
+  }
+
+  const [formData, setFormData] = useState(initialForm)
   const [showEraser, setShowEraser] = useState(false)
   const [filterMessage, setFilterMessage] = useState('')
-  const [filterStatus, setFilterStatus] = useState(null) // 'checking', 'safe', 'harmful', 'warning'
   const [showGuidelines, setShowGuidelines] = useState(true)
-  const debounceTimer = useRef(null)
 
   const createPostMutation = useCreatePost()
+  const categoryLabelMap = {
+    '1': '수학',
+    '2': '영어',
+    '3': '친구관계',
+    '4': '국어',
+    '5': '과학',
+    '6': '기타'
+  }
 
   // 실시간 필터링 (디바운스 적용)
-  const handleContentChange = useCallback((e) => {
+  const handleContentChange = (e) => {
     const content = e.target.value
-    setFormData(prev => ({ ...prev, content }))
-
-    // 디바운스로 500ms 후에 검사
-    if (debounceTimer.current) {
-      clearTimeout(debounceTimer.current)
-    }
-
-    if (content.length > 5) {
-      setFilterStatus('checking')
-
-      debounceTimer.current = setTimeout(() => {
-        // 클라이언트 측 필터링
-        const profanityResult = detectProfanity(content)
-        const contextResult = analyzeContext(content)
-
-        if (profanityResult.severity === 'blocked' || contextResult.toxicityScore > 50) {
-          setFilterStatus('harmful')
-          setShowEraser(true)
-          setFilterMessage(profanityResult.message || '부적절한 내용이 감지되었습니다.')
-          setTimeout(() => {
-            setShowEraser(false)
-            setFilterStatus(null)
-          }, 3000)
-        } else if (profanityResult.severity === 'warning') {
-          setFilterStatus('warning')
-          setFilterMessage(profanityResult.message)
-          setTimeout(() => setFilterStatus(null), 2000)
-        } else {
-          setFilterStatus('safe')
-          setTimeout(() => setFilterStatus(null), 1500)
-        }
-      }, 500)
-    } else {
-      setFilterStatus(null)
-    }
-  }, [])
+    setFormData((prev) => ({ ...prev, content }))
+  }
 
   const handleTitleChange = (e) => {
     const title = e.target.value
-    setFormData(prev => ({ ...prev, title }))
-
-    // 제목도 간단히 체크
-    if (title.length > 3) {
-      const result = detectProfanity(title)
-      if (result.severity === 'blocked') {
-        setShowEraser(true)
-        setFilterMessage('제목에 부적절한 내용이 포함되어 있습니다.')
-        setTimeout(() => setShowEraser(false), 2000)
-      }
-    }
+    setFormData((prev) => ({ ...prev, title }))
   }
 
   const handleSubmit = async (e) => {
@@ -91,22 +55,58 @@ function QuestionWrite() {
 
     if (titleCheck.severity === 'blocked' || contentCheck.severity === 'blocked') {
       setShowEraser(true)
-      setFilterMessage('부적절한 언어가 포함되어 있습니다. 수정 후 다시 시도해주세요.')
+      setFilterMessage('부적절한 언어가 포함되어 있습니다. 선배가 정리했어요.')
+      setTimeout(() => {
+        setShowEraser(false)
+        navigate(0)
+      }, 2500)
       return
     }
 
     if (contextCheck.toxicityScore > 60) {
       setShowEraser(true)
-      setFilterMessage('내용이 다소 부정적이거나 공격적일 수 있습니다. 다시 한 번 확인해주세요.')
+      setFilterMessage('부적절한 언어가 포함되어 있습니다. 선배가 정리했어요.')
+      setTimeout(() => {
+        setShowEraser(false)
+        navigate(0)
+      }, 2500)
       return
     }
 
     // API 호출
-    createPostMutation.mutate({
+    if (!formData.categoryId) {
+      alert('카테고리를 선택해주세요.')
+      return
+    }
+
+    const payload = {
       title: formData.title,
       content: formData.content,
       categoryId: parseInt(formData.categoryId),
-      isAnonymous: formData.isAnonymous
+      isAnonymous: formData.isAnonymous,
+      boardType: 'QUESTION',
+      questionInfo: {
+        categoryName: categoryLabelMap[formData.categoryId] || '기타',
+        isForSeniorsOnly: formData.isForSeniorsOnly
+      }
+    }
+
+    createPostMutation.mutate(payload, {
+      onSuccess: (data) => {
+        if (data?.isBad) {
+          setFormData(initialForm)
+          setShowEraser(true)
+          setFilterMessage('부적절한 언어가 포함되어 있습니다. 선배가 정리했어요.')
+          setTimeout(() => {
+            setShowEraser(false)
+            navigate('/questions/write', { replace: true })
+          }, 2500)
+          return
+        }
+
+        alert('질문이 등록되었습니다.')
+        navigate('/questions')
+      }
     })
   }
 
@@ -174,13 +174,6 @@ function QuestionWrite() {
           <div className="form-section">
             <label className="form-label">
               내용 <span className="required">*</span>
-              {filterStatus && (
-                <span className={`filter-indicator filter-${filterStatus}`}>
-                  {filterStatus === 'checking' && '🔍 검사 중...'}
-                  {filterStatus === 'safe' && '✅ 안전'}
-                  {filterStatus === 'harmful' && '⚠️ 부적절한 내용'}
-                </span>
-              )}
             </label>
             <textarea
               className="form-textarea"

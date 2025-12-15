@@ -12,6 +12,7 @@ function Navbar() {
   const isLoggedIn = useAuthStore((state) => state.isAuthenticated)
   const userName = useAuthStore((state) => state.userName)
   const isSenior = useAuthStore((state) => state.isSenior)
+  const isAdmin = useAuthStore((state) => state.isAdmin)
   const handleLogout = useLogout()
 
   return (
@@ -49,7 +50,7 @@ function Navbar() {
             </Link>
           )}
 
-          {isLoggedIn && isSenior && (
+          {isLoggedIn && isAdmin && (
             <Link to="/dashboard/bad-comments" className="nav-item nav-item-special">
               <span className="nav-icon">🛡️</span>
               <span>관리</span>
@@ -62,7 +63,8 @@ function Navbar() {
             <>
               <div className="user-info">
                 <span className="user-name">{userName}</span>
-                {isSenior && <span className="senior-tag">선배</span>}
+                {isAdmin && <span className="admin-tag">관리자</span>}
+                {isSenior && !isAdmin && <span className="senior-tag">선배</span>}
               </div>
               {!isSenior && (
                 <Link to="/senior-verify" className="nav-btn nav-btn-outline">

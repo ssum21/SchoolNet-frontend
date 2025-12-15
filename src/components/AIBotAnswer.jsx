@@ -14,18 +14,34 @@ function AIBotAnswer({ questionId }) {
     setLoading(true)
     try {
       const response = await axios.post('/bot/answer', null, {
-        params: { questionId }
+        params: { questionId },
+        timeout: 20000 // 20초 timeout
       })
-      setBotAnswer(response.data)
+      // 백엔드 응답 형식: {answer: "..."}
+      setBotAnswer({
+        id: `ai-${questionId}`,
+        content: response.data.answer,
+        botType: 'Gemini AI',
+        helpfulCount: 0,
+        notHelpfulCount: 0
+      })
       setShowAnswer(true)
       setLoading(false)
     } catch (error) {
       console.error('AI 답변 생성 실패:', error)
+      alert('AI 답변 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
       setLoading(false)
     }
   }
 
+  const [rated, setRated] = useState(null) // 'helpful' | 'notHelpful' | null
+
   const handleRate = async (isHelpful) => {
+    // 이미 같은 평가를 했으면 무시
+    if ((isHelpful && rated === 'helpful') || (!isHelpful && rated === 'notHelpful')) {
+      return
+    }
+
     try {
       await axios.post('/bot/rate', null, {
         params: {
@@ -33,9 +49,31 @@ function AIBotAnswer({ questionId }) {
           isHelpful
         }
       })
-      alert(isHelpful ? '피드백 감사합니다!' : '피드백이 전달되었습니다.')
+
+      // 이전 평가가 있었으면 그 카운트 감소
+      setBotAnswer(prev => {
+        const newAnswer = { ...prev }
+
+        if (rated === 'helpful') {
+          newAnswer.helpfulCount = Math.max(0, prev.helpfulCount - 1)
+        } else if (rated === 'notHelpful') {
+          newAnswer.notHelpfulCount = Math.max(0, prev.notHelpfulCount - 1)
+        }
+
+        // 새 평가 카운트 증가
+        if (isHelpful) {
+          newAnswer.helpfulCount = (newAnswer.helpfulCount || 0) + 1
+        } else {
+          newAnswer.notHelpfulCount = (newAnswer.notHelpfulCount || 0) + 1
+        }
+
+        return newAnswer
+      })
+
+      setRated(isHelpful ? 'helpful' : 'notHelpful')
     } catch (error) {
       console.error('평가 실패:', error)
+      alert('평가 처리에 실패했습니다.')
     }
   }
 
@@ -74,13 +112,13 @@ function AIBotAnswer({ questionId }) {
             </p>
             <div className="bot-rating">
               <button
-                className="btn-helpful"
+                className={`btn-helpful ${rated === 'helpful' ? 'active' : ''}`}
                 onClick={() => handleRate(true)}
               >
                 👍 도움됨 ({botAnswer.helpfulCount})
               </button>
               <button
-                className="btn-not-helpful"
+                className={`btn-not-helpful ${rated === 'notHelpful' ? 'active' : ''}`}
                 onClick={() => handleRate(false)}
               >
                 👎 도움안됨 ({botAnswer.notHelpfulCount})

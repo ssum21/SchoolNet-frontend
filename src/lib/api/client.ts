@@ -7,7 +7,13 @@ import { useAuthStore } from '../store/auth'
 import type { ApiError } from './types'
 
 // Base URL 설정
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://34.239.37.147:8080'
+const getBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_BASE_URL) {
+    return import.meta.env.VITE_API_BASE_URL
+  }
+  return `http://${window.location.hostname}:8082`
+}
+const BASE_URL = getBaseUrl()
 
 // Axios 인스턴스 생성
 const apiClient: AxiosInstance = axios.create({
