@@ -102,8 +102,11 @@ export interface AuthResponse {
   token: string
   accessToken?: string
   userId: number | string
-  name: string
+  username?: string
+  name?: string
   email?: string
+  role?: string
+  seniorVerified?: boolean  // Java boolean getter 규칙
   isSeniorVerified?: boolean
 }
 

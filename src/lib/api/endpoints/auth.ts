@@ -14,7 +14,7 @@ export const authApi = {
   },
 
   /**
-   * 회원가입
+   * 회원가입 (학생증 OCR 인증)
    */
   register: async (data: RegisterRequest): Promise<User> => {
     const formData = new FormData()
@@ -24,7 +24,7 @@ export const authApi = {
     formData.append('schoolName', data.schoolName)
     formData.append('studentCard', data.studentCard)
 
-    const response = await apiClient.post<User>('/api/users/register', formData, {
+    const response = await apiClient.post<User>('/api/users/register-with-card', formData, {
       headers: {
         'Content-Type': 'multipart/form-data'
       }

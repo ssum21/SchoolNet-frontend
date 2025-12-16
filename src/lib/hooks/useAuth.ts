@@ -19,12 +19,14 @@ export const useLogin = () => {
     onSuccess: (response) => {
       // 토큰 저장
       const token = response.token || response.accessToken || ''
+      // 백엔드 Java boolean getter 규칙으로 seniorVerified로 직렬화됨
+      const isSenior = response.seniorVerified ?? response.isSeniorVerified ?? false
       setAuth(
         token,
         response.userId,
         response.username || response.name,
         response.email,
-        response.isSeniorVerified,
+        isSenior,
         response.role || 'STUDENT'
       )
 
