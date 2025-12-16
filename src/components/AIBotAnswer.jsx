@@ -55,8 +55,8 @@ function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator
       `
 
       // Direct REST Call to Google Gemini API
-      // Using gemini-1.5-flash (more stable)
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/${TARGET_MODEL}:generateContent?key=${API_KEY}`
+      // Using gemini-1.5-flash with v1 API
+      const url = `https://generativelanguage.googleapis.com/v1/models/${TARGET_MODEL}:generateContent?key=${API_KEY}`
 
       const payload = {
         contents: [{
