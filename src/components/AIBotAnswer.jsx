@@ -14,7 +14,7 @@ function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator
 
   // Configuration provided by user
   const API_KEY = "AIzaSyBSXqVLmEtnGfYzqdvJd-sRKSPJQsUczUs"
-  const TARGET_MODEL = "gemini-1.5-flash"
+  const TARGET_MODEL = "gemini-2.0-flash"
 
   const generateBotAnswer = async () => {
     // If mock generator is provided, use it (for testing)
@@ -83,7 +83,7 @@ function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator
 
       setBotAnswer({
         content: answerText,
-        model: 'Gemini 1.5 Flash'
+        model: 'Gemini 2.0 Flash'
       })
 
     } catch (err) {
