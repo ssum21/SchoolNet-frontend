@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useParams, Link, useNavigate } from 'react-router-dom'
 import axios from '../api/axios'
 import SeniorBadge from '../components/SeniorBadge'
-import CommentForm from '../components/CommentForm'
+import AnswerInput from '../components/AnswerInput' // Helper to use AnswerInput
 import AIBotAnswer from '../components/AIBotAnswer'
 import PositiveReactions from '../components/PositiveReactions'
 import '../styles/questiondetail.css'
@@ -325,7 +325,7 @@ function QuestionDetail() {
         {/* 답변 작성 폼 */}
         <section className="answer-write-section">
           <h3 className="answer-write-title">답변 작성</h3>
-          <CommentForm onSubmit={handleAnswerSubmit} />
+          <AnswerInput onSubmit={handleAnswerSubmit} />
         </section>
       </div>
     </div>

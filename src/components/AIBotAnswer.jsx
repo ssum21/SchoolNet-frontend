@@ -13,7 +13,7 @@ function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator
   const [rated, setRated] = useState(null)
 
   // Configuration provided by user
-  const API_KEY = "AIzaSyC1xP1cZgAIWBftaO1Cm-ahfBbEN7VCkBA"
+  const API_KEY = "AIzaSyBSXqVLmEtnGfYzqdvJd-sRKSPJQsUczUs"
   const TARGET_MODEL = "gemini-2.5-flash"
 
   const generateBotAnswer = async () => {
