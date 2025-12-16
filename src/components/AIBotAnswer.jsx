@@ -14,7 +14,7 @@ function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator
 
   // Configuration provided by user
   const API_KEY = "AIzaSyBSXqVLmEtnGfYzqdvJd-sRKSPJQsUczUs"
-  const TARGET_MODEL = "gemini-2.5-flash"
+  const TARGET_MODEL = "gemini-1.5-flash"
 
   const generateBotAnswer = async () => {
     // If mock generator is provided, use it (for testing)
@@ -55,8 +55,8 @@ function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator
       `
 
       // Direct REST Call to Google Gemini API
-      // Using gemini-1.5-flash as the safe default for "flash" requests.
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`
+      // Using gemini-1.5-flash (more stable)
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${TARGET_MODEL}:generateContent?key=${API_KEY}`
 
       const payload = {
         contents: [{
@@ -83,7 +83,7 @@ function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator
 
       setBotAnswer({
         content: answerText,
-        model: 'Gemini 1.5 Flash' // Displaying the actual model used
+        model: 'Gemini 1.5 Flash'
       })
 
     } catch (err) {
