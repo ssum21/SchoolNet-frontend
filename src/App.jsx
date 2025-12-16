@@ -13,6 +13,8 @@ import SeniorVerify from './pages/SeniorVerify'
 import BadCommentsDashboard from './pages/BadCommentsDashboard'
 import TestAnswerInput from './pages/TestAnswerInput' // Import Test Page
 import TestAIBot from './pages/TestAIBot' // Import AI Bot Test Page
+import AdminDashboard from './pages/AdminDashboard' // Import Admin Dashboard
+import Footer from './components/Footer' // Import Footer
 
 /**
  * 메인 앱 컴포넌트
@@ -36,6 +38,9 @@ function App() {
         {/* 안전 관리 */}
         <Route path="/dashboard/bad-comments" element={<BadCommentsDashboard />} />
 
+        {/* 관리자 대시보드 */}
+        <Route path="/admin/dashboard" element={<AdminDashboard />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/senior-verify" element={<SeniorVerify />} />
@@ -44,6 +49,7 @@ function App() {
         <Route path="/test/answer-input" element={<TestAnswerInput />} />
         <Route path="/test/ai-bot" element={<TestAIBot />} />
       </Routes>
+      <Footer />
     </div>
   )
 }
