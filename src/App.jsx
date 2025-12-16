@@ -11,6 +11,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import SeniorVerify from './pages/SeniorVerify'
 import BadCommentsDashboard from './pages/BadCommentsDashboard'
+import TestAnswerInput from './pages/TestAnswerInput' // Import Test Page
+import TestAIBot from './pages/TestAIBot' // Import AI Bot Test Page
 
 /**
  * 메인 앱 컴포넌트
@@ -37,6 +39,10 @@ function App() {
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/senior-verify" element={<SeniorVerify />} />
+
+        {/* 컴포넌트 테스트 페이지 */}
+        <Route path="/test/answer-input" element={<TestAnswerInput />} />
+        <Route path="/test/ai-bot" element={<TestAIBot />} />
       </Routes>
     </div>
   )

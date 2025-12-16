@@ -1,0 +1,123 @@
+/* src/styles/answer-input.css */
+.answer-input-wrapper {
+  position: relative;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.2rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  margin-top: 20px;
+}
+
+.answer-input-wrapper.focused {
+  border-color: #6366f1; /* Primary Brand Color (Indigo) */
+  box-shadow: 0 0 0 4px rgba(99, 102, 241, 0.1);
+  transform: translateY(-2px);
+}
+
+.answer-input-wrapper.shaking {
+  animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
+  border-color: #ef4444; /* Error Red */
+}
+
+.input-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #4b5563;
+}
+
+.status-text {
+  color: #6366f1;
+  font-size: 0.8rem;
+  animation: pulse 2s infinite;
+}
+
+.textarea-container {
+  width: 100%;
+}
+
+.modern-textarea {
+  width: 100%;
+  padding: 0;
+  border: none;
+  background: transparent;
+  resize: none;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #1f2937;
+  outline: none;
+  min-height: 60px;
+  max-height: 400px; /* Max grow height */
+  overflow-y: hidden;
+  font-family: inherit;
+}
+
+.modern-textarea::placeholder {
+  color: #9ca3af;
+}
+
+.input-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 1rem;
+  padding-top: 0.8rem;
+  border-top: 1px solid #f1f5f9;
+}
+
+.char-counter {
+  font-size: 0.8rem;
+  color: #94a3b8;
+  font-weight: 500;
+}
+
+.char-counter.warning {
+  color: #ef4444;
+}
+
+.modern-submit-btn {
+  padding: 0.6rem 1.4rem;
+  background: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+  color: white;
+  border: none;
+  border-radius: 20px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 4px 6px rgba(79, 70, 229, 0.2);
+}
+
+.modern-submit-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 12px rgba(79, 70, 229, 0.3);
+}
+
+.modern-submit-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.modern-submit-btn:disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+@keyframes shake {
+  10%, 90% { transform: translate3d(-1px, 0, 0); }
+  20%, 80% { transform: translate3d(2px, 0, 0); }
+  30%, 50%, 70% { transform: translate3d(-4px, 0, 0); }
+  40%, 60% { transform: translate3d(4px, 0, 0); }
+}
+
+@keyframes pulse {
+  0% { opacity: 0.6; }
+  50% { opacity: 1; }
+  100% { opacity: 0.6; }
+}

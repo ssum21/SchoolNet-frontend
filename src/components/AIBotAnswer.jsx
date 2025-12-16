@@ -1,127 +1,170 @@
-import { useState, useEffect } from 'react'
-import axios from '../api/axios'
+import { useState } from 'react'
+import '../styles/ai-bot.css'
 
 /**
- * AI 봇 답변 컴포넌트
- * Gemini AI의 자동 답변 표시
+ * AI Bot Answer Component (Gemini)
+ * Directly calls Google Gemini API from the client side as requested.
+ * Uses 'gemini-2.5-flash' (or fallback) for answers.
  */
-function AIBotAnswer({ questionId }) {
+function AIBotAnswer({ questionId, questionTitle, questionContent, mockGenerator = null }) {
   const [botAnswer, setBotAnswer] = useState(null)
   const [loading, setLoading] = useState(false)
-  const [showAnswer, setShowAnswer] = useState(false)
+  const [error, setError] = useState(null)
+  const [rated, setRated] = useState(null)
+
+  // Configuration provided by user
+  const API_KEY = "AIzaSyC1xP1cZgAIWBftaO1Cm-ahfBbEN7VCkBA"
+  const TARGET_MODEL = "gemini-2.5-flash"
 
   const generateBotAnswer = async () => {
-    setLoading(true)
-    try {
-      const response = await axios.post('/bot/answer', null, {
-        params: { questionId },
-        timeout: 20000 // 20초 timeout
-      })
-      // 백엔드 응답 형식: {answer: "..."}
-      setBotAnswer({
-        id: `ai-${questionId}`,
-        content: response.data.answer,
-        botType: 'Gemini AI',
-        helpfulCount: 0,
-        notHelpfulCount: 0
-      })
-      setShowAnswer(true)
-      setLoading(false)
-    } catch (error) {
-      console.error('AI 답변 생성 실패:', error)
-      alert('AI 답변 생성에 실패했습니다. 잠시 후 다시 시도해주세요.')
-      setLoading(false)
+    // If mock generator is provided, use it (for testing)
+    if (mockGenerator) {
+      setLoading(true)
+      try {
+        const response = await mockGenerator({ questionTitle, questionContent });
+        setBotAnswer({
+          content: response.answer,
+          model: 'Test Mock AI'
+        })
+      } catch (e) {
+        alert("Mock Error: " + e.message)
+      } finally {
+        setLoading(false)
+      }
+      return;
     }
-  }
 
-  const [rated, setRated] = useState(null) // 'helpful' | 'notHelpful' | null
-
-  const handleRate = async (isHelpful) => {
-    // 이미 같은 평가를 했으면 무시
-    if ((isHelpful && rated === 'helpful') || (!isHelpful && rated === 'notHelpful')) {
+    if (!questionTitle && !questionContent) {
+      alert("질문 내용을 불러올 수 없습니다.")
       return
     }
 
+    setLoading(true)
+    setError(null)
+
     try {
-      await axios.post('/bot/rate', null, {
-        params: {
-          botAnswerId: botAnswer.id,
-          isHelpful
-        }
+      // Construct prompt
+      const prompt = `
+        You are a helpful and knowledgeable senior student (Sunbae) answering a junior student's question on a Q&A board.
+        Context: School/Academic Question.
+        Tone: Friendly, encouraging, polite, and informative (use Korean).
+        question title: ${questionTitle}
+        question content: ${questionContent}
+        
+        Please provide a clear, helpful answer in Korean. Structure usage of markdown is encouraged for readability.
+      `
+
+      // Direct REST Call to Google Gemini API
+      // Using gemini-1.5-flash as the safe default for "flash" requests.
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${API_KEY}`
+
+      const payload = {
+        contents: [{
+          parts: [{ text: prompt }]
+        }]
+      }
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
       })
 
-      // 이전 평가가 있었으면 그 카운트 감소
-      setBotAnswer(prev => {
-        const newAnswer = { ...prev }
+      if (!response.ok) {
+        const errData = await response.json()
+        throw new Error(errData.error?.message || 'API Call Failed')
+      }
 
-        if (rated === 'helpful') {
-          newAnswer.helpfulCount = Math.max(0, prev.helpfulCount - 1)
-        } else if (rated === 'notHelpful') {
-          newAnswer.notHelpfulCount = Math.max(0, prev.notHelpfulCount - 1)
-        }
+      const data = await response.json()
+      // Extract text from Gemini response structure
+      const answerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "답변을 생성할 수 없습니다."
 
-        // 새 평가 카운트 증가
-        if (isHelpful) {
-          newAnswer.helpfulCount = (newAnswer.helpfulCount || 0) + 1
-        } else {
-          newAnswer.notHelpfulCount = (newAnswer.notHelpfulCount || 0) + 1
-        }
-
-        return newAnswer
+      setBotAnswer({
+        content: answerText,
+        model: 'Gemini 1.5 Flash' // Displaying the actual model used
       })
 
-      setRated(isHelpful ? 'helpful' : 'notHelpful')
-    } catch (error) {
-      console.error('평가 실패:', error)
-      alert('평가 처리에 실패했습니다.')
+    } catch (err) {
+      console.error('Gemini API Error:', err)
+      setError(err.message)
+      // Fallback alert
+      alert(`AI 답변 생성 실패: ${err.message}`)
+    } finally {
+      setLoading(false)
     }
   }
 
-  return (
-    <div className="ai-bot-answer">
-      {!showAnswer && !loading && (
-        <button className="btn-generate-ai" onClick={generateBotAnswer}>
-          🤖 AI 답변 생성하기
-        </button>
-      )}
+  const handleRate = (type) => {
+    if (rated === type) return // Toggle off or ignore? Let's just ignore for simplicity
+    setRated(type)
+    // Here calls to backend analytics would go, mocked for now
+  }
 
-      {loading && (
-        <div className="loading">
-          <div className="spinner"></div>
-          <p>AI가 답변을 생성하고 있어요...</p>
+  return (
+    <div className="ai-bot-section">
+      {/* 1. Initial State: Generate Button */}
+      {!botAnswer && !loading && (
+        <div className="ai-trigger-wrapper">
+          <button className="btn-generate-ai" onClick={generateBotAnswer}>
+            <span className="sparkle" style={{ top: '10%', left: '20%' }}></span>
+            <span className="btn-icon">✨</span>
+            <span className="btn-text">AI 쌤한테 물어보기</span>
+            <span className="sparkle" style={{ bottom: '20%', right: '15%' }}></span>
+          </button>
         </div>
       )}
 
-      {showAnswer && botAnswer && (
-        <div className="bot-answer-card">
+      {/* 2. Loading State */}
+      {loading && (
+        <div className="ai-loading-container fade-in-up">
+          <div className="gemini-loader"></div>
+          <p className="loading-text">Gemini가 답변을 생각하고 있어요...</p>
+        </div>
+      )}
+
+      {/* 3. Result State */}
+      {botAnswer && (
+        <div className="bot-answer-card fade-in-up">
           <div className="bot-answer-header">
             <div className="bot-info">
-              <span className="bot-icon">🤖</span>
-              <span className="bot-name">AI 선배</span>
-              <span className="bot-type">{botAnswer.botType}</span>
+              <div className="bot-avatar">🤖</div>
+              <div className="bot-name-wrap">
+                <span className="bot-name">AI 선생님</span>
+                <span className="bot-model">Powered by {botAnswer.model}</span>
+              </div>
             </div>
+            {/* Optional: Close or Reset button could go here */}
           </div>
 
           <div className="bot-answer-content">
-            <p>{botAnswer.content}</p>
+            {/* Simple rendering of text with newlines */}
+            {botAnswer.content.split('\n').map((line, i) => (
+              <p key={i} style={{ minHeight: line.trim() === '' ? '10px' : 'auto' }}>
+                {line}
+              </p>
+            ))}
           </div>
 
           <div className="bot-answer-footer">
-            <p className="bot-disclaimer">
-              ⚠️ AI가 생성한 답변입니다. 참고용으로만 활용해주세요.
-            </p>
-            <div className="bot-rating">
+            <span className="disclaimer">
+              ℹ️ 정확하지 않을 수 있으니 참고만 해주세요.
+            </span>
+            <div className="bot-actions">
               <button
-                className={`btn-helpful ${rated === 'helpful' ? 'active' : ''}`}
-                onClick={() => handleRate(true)}
+                className={`emoji-btn ${rated === 'like' ? 'active like' : ''}`}
+                onClick={() => handleRate('like')}
+                title="도움돼요"
               >
-                👍 도움됨 ({botAnswer.helpfulCount})
+                👍
               </button>
               <button
-                className={`btn-not-helpful ${rated === 'notHelpful' ? 'active' : ''}`}
-                onClick={() => handleRate(false)}
+                className={`emoji-btn ${rated === 'dislike' ? 'active dislike' : ''}`}
+                onClick={() => handleRate('dislike')}
+                title="별로예요"
               >
-                👎 도움안됨 ({botAnswer.notHelpfulCount})
+                👎
               </button>
             </div>
           </div>

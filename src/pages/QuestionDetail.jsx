@@ -254,7 +254,11 @@ function QuestionDetail() {
         )}
 
         {/* AI 봇 답변 */}
-        <AIBotAnswer questionId={id} />
+        <AIBotAnswer
+          questionId={id}
+          questionTitle={question.title}
+          questionContent={question.content}
+        />
 
         {/* 답변 섹션 */}
         <section className="answers-section">
