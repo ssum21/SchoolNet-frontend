@@ -11,17 +11,21 @@ function Home() {
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('hot') // hot, new, trending
-  const [liveCount, setLiveCount] = useState(127)
+  const [liveCount, setLiveCount] = useState(3) // 12명 중 3명 접속 중
   const [trendingTopics, setTrendingTopics] = useState([])
 
   useEffect(() => {
     fetchQuestions()
     fetchTrendingTopics()
 
-    // 실시간 카운터 업데이트
+    // 실시간 카운터 업데이트 (2~5명 왔다갔다)
     const interval = setInterval(() => {
-      setLiveCount(prev => prev + Math.floor(Math.random() * 3))
-    }, 3000)
+      setLiveCount(prev => {
+        const change = Math.random() > 0.5 ? 1 : -1
+        const newValue = prev + change
+        return newValue < 2 ? 2 : newValue > 5 ? 5 : newValue
+      })
+    }, 5000)
 
     return () => clearInterval(interval)
   }, [])
@@ -33,7 +37,7 @@ function Home() {
   const fetchQuestions = async () => {
     setLoading(true)
     try {
-      // 임시 데이터 (탭별로 다른 데이터)
+      // 임시 데이터 (12명 유저 시나리오)
       const mockData = {
         hot: [
           {
@@ -42,9 +46,9 @@ function Home() {
             content: '이차방정식 푸는 방법을 모르겠어요. 근의 공식은 어떻게 사용하나요?',
             authorName: '김학생',
             categoryName: '수학',
-            viewCount: 1234,
-            answerCount: 45,
-            upvotes: 128,
+            viewCount: 42,
+            answerCount: 8,
+            upvotes: 11,
             createdAt: '3시간 전',
             isHot: true
           },
@@ -54,9 +58,9 @@ function Home() {
             content: '요즘 친구들과 잘 지내는 방법이 궁금해요. 조언 부탁드려요!',
             authorName: '익명',
             categoryName: '친구관계',
-            viewCount: 892,
-            answerCount: 32,
-            upvotes: 95,
+            viewCount: 35,
+            answerCount: 6,
+            upvotes: 9,
             createdAt: '5시간 전',
             isHot: false
           },
@@ -66,9 +70,9 @@ function Home() {
             content: '제가 쓰던 영어 단어 암기법을 공유해요. 정말 효과적이에요!',
             authorName: '이선배',
             categoryName: '영어',
-            viewCount: 756,
-            answerCount: 28,
-            upvotes: 87,
+            viewCount: 28,
+            answerCount: 5,
+            upvotes: 12,
             createdAt: '7시간 전',
             isSenior: true
           }
@@ -80,9 +84,9 @@ function Home() {
             content: '내일까지 제출해야 하는데 어떻게 써야 할지 모르겠어요',
             authorName: '박학생',
             categoryName: '과학',
-            viewCount: 23,
-            answerCount: 2,
-            upvotes: 5,
+            viewCount: 3,
+            answerCount: 0,
+            upvotes: 1,
             createdAt: '2분 전',
             isNew: true
           },
@@ -92,9 +96,9 @@ function Home() {
             content: '다음주에 체육대회가 있는데 준비할 게 뭐가 있을까요?',
             authorName: '최학생',
             categoryName: '학교생활',
-            viewCount: 45,
+            viewCount: 5,
             answerCount: 1,
-            upvotes: 8,
+            upvotes: 2,
             createdAt: '15분 전',
             isNew: true
           }
@@ -106,9 +110,9 @@ function Home() {
             content: '시험 기간에 효율적으로 공부하는 방법을 정리해봤어요',
             authorName: '정선배',
             categoryName: '공부법',
-            viewCount: 2341,
-            answerCount: 67,
-            upvotes: 234,
+            viewCount: 56,
+            answerCount: 10,
+            upvotes: 12,
             createdAt: '1일 전',
             isTrending: true,
             isSenior: true
@@ -125,12 +129,13 @@ function Home() {
   }
 
   const fetchTrendingTopics = () => {
+    // 12명 유저 기준 트렌드
     setTrendingTopics([
-      { id: 1, name: '시험공부', count: 234, trend: 'up' },
-      { id: 2, name: '친구관계', count: 189, trend: 'up' },
-      { id: 3, name: '수학', count: 156, trend: 'same' },
-      { id: 4, name: '영어단어', count: 142, trend: 'down' },
-      { id: 5, name: '학교생활', count: 98, trend: 'up' }
+      { id: 1, name: '시험공부', count: 8, trend: 'up' },
+      { id: 2, name: '친구관계', count: 6, trend: 'up' },
+      { id: 3, name: '수학', count: 5, trend: 'same' },
+      { id: 4, name: '영어단어', count: 4, trend: 'down' },
+      { id: 5, name: '학교생활', count: 3, trend: 'up' }
     ])
   }
 
@@ -153,10 +158,10 @@ function Home() {
                 <span>지금 <strong>{liveCount}명</strong>이 활동중</span>
               </div>
               <h1 className="hero-title-dynamic">
-                궁금한 건 뭐든지 물어보세요! 🎓
+                욕설·악성글은 자동 차단 🎓
               </h1>
               <p className="hero-subtitle-dynamic">
-                선배들이 실시간으로 답변해드려요
+                친구와 선배와 바로 소통하는 커뮤니티
               </p>
               <div className="hero-actions">
                 <Link to="/questions/write" className="btn btn-primary btn-lg">
@@ -169,15 +174,15 @@ function Home() {
             </div>
             <div className="hero-stats">
               <div className="stat-box">
-                <div className="stat-number">1,234</div>
+                <div className="stat-number">45</div>
                 <div className="stat-label">전체 질문</div>
               </div>
               <div className="stat-box">
-                <div className="stat-number">5,678</div>
+                <div className="stat-number">58</div>
                 <div className="stat-label">답변 수</div>
               </div>
               <div className="stat-box">
-                <div className="stat-number">892</div>
+                <div className="stat-number">12</div>
                 <div className="stat-label">회원</div>
               </div>
             </div>

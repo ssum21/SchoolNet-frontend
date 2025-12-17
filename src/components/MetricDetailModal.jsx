@@ -65,15 +65,21 @@ const MetricDetailModal = ({ isOpen, onClose, metric }) => {
                     {/* Backend Integration Advice Section */}
                     <div className="backend-advice-box">
                         <h4>🛠️ Backend Integration Guide</h4>
-                        <p>To connect this metric to your real backend:</p>
+                        <p>
+                            To connect this to your Spring Boot backend, please refer to the
+                            <strong> <code>backend_integration_guide.md</code></strong> artifact.
+                        </p>
+                        <div style={{ marginTop: '10px', fontSize: '0.85rem', color: '#94a3b8' }}>
+                            This guide includes:
+                            <ul style={{ marginTop: '5px', paddingLeft: '20px' }}>
+                                <li><code>AdminMetricController</code> code</li>
+                                <li><code>DashboardMetricsDTO</code> structure</li>
+                                <li><code>MetricDTO</code> builder pattern</li>
+                            </ul>
+                        </div>
                         <code className="code-block">
-                            GET /api/admin/metrics/{metric.id || 'metric_key'}
+                            GET /api/admin/metrics
                         </code>
-                        <ul className="advice-list">
-                            <li><strong>Database:</strong> Ensure your DB logs `{metric.title.split(' ')[0]}` events with timestamps.</li>
-                            <li><strong>Aggregation:</strong> Use a cron job/scheduled task to aggregate daily values into a `metrics_daily` table to speed up this chart query.</li>
-                            <li><strong>Real-time:</strong> For live updates, consider using WebSocket or SSE (Server-Sent Events) for the dashboard.</li>
-                        </ul>
                     </div>
                 </div>
             </div>
