@@ -13,115 +13,63 @@ function AdminDashboard() {
     const [selectedMetric, setSelectedMetric] = useState(null)
 
     useEffect(() => {
-        // Simulate API Fetch with "11 Beta Users" Scenario
-        setTimeout(() => {
-            // Scenario: 11 highly active users (Early Adopters)
-            // Total Questions: ~45 (avg 4 per user)
-            // Total Views: ~680 (avg 60 per user)
-            setMetrics({
-                trust: {
-                    autoBlockPrecision: {
-                        title: "자동차단 정확도",
-                        value: 100, // Small sample size, perfect so far 
-                        trend: "same",
-                        trendValue: "-",
-                        status: "good",
-                        id: "auto_block_precision",
-                        history: [100, 100, 100, 100, 100, 100, 100]
-                    },
-                    incidentRate: {
-                        title: "안전 사건 발생률",
-                        value: 0, // No incidents yet among 11 users
-                        trend: "same",
-                        trendValue: "0",
-                        status: "good",
-                        id: "incident_rate",
-                        history: [0, 0, 0, 0, 0, 0, 0]
-                    },
-                    appealOverturnRate: {
-                        title: "이의제기 해제율",
-                        value: 0,
-                        trend: "same",
-                        trendValue: "0%",
-                        status: "good",
-                        id: "appeal_overturn_rate",
-                        history: [0, 0, 0, 0, 0, 0, 0]
-                    },
-                    timeToReview: {
-                        title: "관리자 평균 처리 시간",
-                        value: 2, // Very fast for small volume
-                        trend: "down",
-                        trendValue: "5분",
-                        status: "good",
-                        id: "time_to_review",
-                        history: [15, 10, 5, 2, 2, 1, 2]
-                    },
+        // Initial Mock Data Load
+        // Scenario: 11 highly active users (Early Adopters)
+        // History: Fluctuating within requested ranges (92~98, 8~12)
+        const initialData = {
+            trust: {
+                autoBlockPrecision: {
+                    title: "자동차단 정확도",
+                    value: 97.2, // Current: Improvement
+                    trend: "up",
+                    trendValue: "1.5%",
+                    status: "good",
+                    id: "auto_block_precision",
+                    history: [93.5, 94.2, 92.8, 95.1, 96.0, 95.8, 97.2] // Range 92-98
                 },
-                mentor: {
-                    pac: {
-                        title: "선배 답변 커버리지",
-                        value: 92, // 11 users are helping each other actively
-                        trend: "up",
-                        trendValue: "12%",
-                        status: "good",
-                        id: "mentor_pac",
-                        history: [60, 65, 78, 82, 85, 88, 92]
-                    },
-                    unanswered: {
-                        title: "미답변 질문",
-                        value: 2, // Only 2 questions waiting
-                        trend: "down",
-                        trendValue: "1",
-                        status: "good",
-                        id: "mentor_backlog",
-                        history: [5, 4, 6, 4, 3, 2, 2]
-                    },
-                    tfpa: {
-                        title: "평균 첫 답변 시간",
-                        value: 15, // Very fast interaction
-                        trend: "down",
-                        trendValue: "35분",
-                        status: "good",
-                        id: "mentor_tfpa",
-                        history: [120, 90, 60, 45, 30, 20, 15]
-                    },
-                    phr: {
-                        title: "답변 도움됨 비율",
-                        value: 95, // High quality early interactions
-                        trend: "up",
-                        status: "good",
-                        id: "mentor_phr",
-                        history: [80, 85, 88, 90, 92, 94, 95]
-                    },
+                incidentRate: {
+                    title: "안전 사건 발생률",
+                    value: 8.5, // Current: Improvement (Lower is better)
+                    trend: "down",
+                    trendValue: "2.1",
+                    status: "good",
+                    id: "incident_rate",
+                    history: [11.2, 12.0, 10.5, 9.8, 10.2, 9.4, 8.5] // Range 8-12
                 },
-                value: {
-                    rqr: {
-                        title: "질문 해결률 (RQR)",
-                        value: 88,
-                        trend: "up",
-                        trendValue: "5%",
-                        status: "good",
-                        id: "value_rqr",
-                        isHighlight: true,
-                        history: [70, 72, 75, 80, 82, 85, 88]
-                    },
-                    aiResolution: {
-                        title: "AI 답변 해결 기여도",
-                        value: 40,
-                        id: "value_ai",
-                        history: [30, 32, 35, 38, 38, 39, 40]
-                    },
-                    peerResolution: {
-                        title: "선배 답변 해결 기여도",
-                        value: 90,
-                        status: "good",
-                        id: "value_peer",
-                        history: [85, 85, 86, 88, 89, 90, 90]
-                    },
-                }
-            })
-            setLoading(false)
-        }, 1000)
+                appealOverturnRate: {
+                    title: "이의제기 해제율",
+                    value: 0,
+                    trend: "same",
+                    trendValue: "0%",
+                    status: "good",
+                    id: "appeal_overturn_rate",
+                    history: [0, 0, 0, 0, 0, 0, 0]
+                },
+                timeToReview: {
+                    title: "관리자 평균 처리 시간",
+                    value: 2,
+                    trend: "down",
+                    trendValue: "5분",
+                    status: "good",
+                    id: "time_to_review",
+                    history: [15, 10, 5, 2, 2, 1, 2]
+                },
+            },
+            mentor: {
+                pac: { title: "선배 답변 커버리지", value: 92, trend: "up", trendValue: "12%", status: "good", id: "mentor_pac", history: [60, 65, 78, 82, 85, 88, 92] },
+                unanswered: { title: "미답변 질문", value: 2, trend: "down", trendValue: "1", status: "good", id: "mentor_backlog", history: [5, 4, 6, 4, 3, 2, 2] },
+                tfpa: { title: "평균 첫 답변 시간", value: 15, trend: "down", trendValue: "35분", status: "good", id: "mentor_tfpa", history: [120, 90, 60, 45, 30, 20, 15] },
+                phr: { title: "답변 도움됨 비율", value: 95, trend: "up", status: "good", id: "mentor_phr", history: [80, 85, 88, 90, 92, 94, 95] },
+            },
+            value: {
+                rqr: { title: "질문 해결률 (RQR)", value: 88, trend: "up", trendValue: "5%", status: "good", id: "value_rqr", isHighlight: true, history: [70, 72, 75, 80, 82, 85, 88] },
+                aiResolution: { title: "AI 답변 해결 기여도", value: 40, id: "value_ai", history: [30, 32, 35, 38, 38, 39, 40] },
+                peerResolution: { title: "선배 답변 해결 기여도", value: 90, status: "good", id: "value_peer", history: [85, 85, 86, 88, 89, 90, 90] },
+            }
+        }
+
+        setMetrics(initialData)
+        setLoading(false)
     }, [])
 
     if (loading) {
