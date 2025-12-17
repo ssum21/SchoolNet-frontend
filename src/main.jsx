@@ -23,10 +23,11 @@ const initializeAuth = () => {
   const userId = localStorage.getItem('userId')
   const userName = localStorage.getItem('userName')
   const userEmail = localStorage.getItem('userEmail')
-  const isSenior = localStorage.getItem('isSenior') === 'true'
+  const isSenior = localStorage.getItem('isSeniorVerified') === 'true'
+  const role = localStorage.getItem('userRole') || 'STUDENT'
 
   if (token && userId && userName) {
-    useAuthStore.getState().setAuth(token, userId, userName, userEmail, isSenior)
+    useAuthStore.getState().setAuth(token, userId, userName, userEmail, isSenior, role)
   }
 }
 

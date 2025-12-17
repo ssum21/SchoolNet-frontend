@@ -14,20 +14,14 @@ export const authApi = {
   },
 
   /**
-   * 회원가입 (학생증 OCR 인증)
+   * 회원가입 (간단한 회원가입)
    */
   register: async (data: RegisterRequest): Promise<User> => {
-    const formData = new FormData()
-    formData.append('email', data.email)
-    formData.append('password', data.password)
-    formData.append('username', data.username)
-    formData.append('schoolName', data.schoolName)
-    formData.append('studentCard', data.studentCard)
-
-    const response = await apiClient.post<User>('/api/users/register-with-card', formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
+    const response = await apiClient.post<User>('/api/users/register', {
+      email: data.email,
+      password: data.password,
+      username: data.username,
+      schoolName: data.schoolName
     })
     return response.data
   },

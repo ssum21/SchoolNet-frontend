@@ -51,10 +51,16 @@ function Navbar() {
           )}
 
           {isLoggedIn && isAdmin && (
-            <Link to="/dashboard/bad-comments" className="nav-item nav-item-special">
-              <span className="nav-icon">🛡️</span>
-              <span>관리</span>
-            </Link>
+            <>
+              <Link to="/admin/dashboard" className="nav-item nav-item-special">
+                <span className="nav-icon">🚀</span>
+                <span>대시보드</span>
+              </Link>
+              <Link to="/dashboard/bad-comments" className="nav-item nav-item-special">
+                <span className="nav-icon">🛡️</span>
+                <span>악플관리</span>
+              </Link>
+            </>
           )}
         </div>
 

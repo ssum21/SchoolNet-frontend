@@ -15,7 +15,6 @@ function Register() {
     username: '',
     schoolName: ''
   })
-  const [studentCard, setStudentCard] = useState(null)
   const [error, setError] = useState('')
 
   const registerMutation = useRegister()
@@ -36,18 +35,12 @@ function Register() {
       return
     }
 
-    if (!studentCard) {
-      setError('학생증 이미지를 업로드해주세요.')
-      return
-    }
-
     registerMutation.mutate(
       {
         email: formData.email,
         password: formData.password,
         username: formData.username,
-        schoolName: formData.schoolName,
-        studentCard
+        schoolName: formData.schoolName
       },
       {
         onError: (err) => {
@@ -171,36 +164,18 @@ function Register() {
               )}
             </div>
 
-            <div className="auth-form-row">
-              <div className="auth-form-group">
-                <label className="auth-label">학교명 <span className="required">*</span></label>
-                <div className="auth-input-wrapper">
-                  <span className="input-icon">🏫</span>
-                  <input
-                    type="text"
-                    className="auth-input"
-                    value={formData.schoolName}
-                    onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
-                    placeholder="(예: 서울초등학교)"
-                    required
-                  />
-                </div>
-              </div>
-
-              <div className="auth-form-group">
-                <label className="auth-label">학생증 업로드 <span className="required">*</span></label>
-                <label className="auth-file-upload">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    onChange={(e) => setStudentCard(e.target.files?.[0] ?? null)}
-                    required
-                  />
-                  <span className="file-upload-button">파일 선택</span>
-                  <span className="file-upload-name">
-                    {studentCard ? studentCard.name : '학생증 이미지를 업로드하세요'}
-                  </span>
-                </label>
+            <div className="auth-form-group">
+              <label className="auth-label">학교명 <span className="required">*</span></label>
+              <div className="auth-input-wrapper">
+                <span className="input-icon">🏫</span>
+                <input
+                  type="text"
+                  className="auth-input"
+                  value={formData.schoolName}
+                  onChange={(e) => setFormData({ ...formData, schoolName: e.target.value })}
+                  placeholder="(예: 서울초등학교)"
+                  required
+                />
               </div>
             </div>
 
