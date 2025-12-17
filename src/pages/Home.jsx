@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { Link } from 'react-router-dom'
 import axios from '../api/axios'
 import '../styles/home.css'
+import { getMockData, getTrendingTopics as getMockTrendingTopics, MEMBER_COUNT } from '../data/mockHomeData'
 
 /**
  * 홈 페이지 - 동적 Reddit 스타일
@@ -11,7 +12,7 @@ function Home() {
   const [questions, setQuestions] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('hot') // hot, new, trending
-  const [liveCount, setLiveCount] = useState(3) // 12명 중 3명 접속 중
+  const [liveCount, setLiveCount] = useState(MEMBER_COUNT) // 14명 중 3명 접속 중
   const [trendingTopics, setTrendingTopics] = useState([])
 
   useEffect(() => {
@@ -23,6 +24,7 @@ function Home() {
       setLiveCount(prev => {
         const change = Math.random() > 0.5 ? 1 : -1
         const newValue = prev + change
+        // Ensure accurate range based on MEMBER_COUNT if needed, but 2-5 is fine for random fluctuation
         return newValue < 2 ? 2 : newValue > 5 ? 5 : newValue
       })
     }, 5000)
@@ -37,88 +39,8 @@ function Home() {
   const fetchQuestions = async () => {
     setLoading(true)
     try {
-      // 임시 데이터 (12명 유저 시나리오)
-      const mockData = {
-        hot: [
-          {
-            id: 1,
-            title: '중학교 수학 문제 도와주세요 🔥',
-            content: '이차방정식 푸는 방법을 모르겠어요. 근의 공식은 어떻게 사용하나요?',
-            authorName: '김학생',
-            categoryName: '수학',
-            viewCount: 42,
-            answerCount: 8,
-            upvotes: 11,
-            createdAt: '3시간 전',
-            isHot: true
-          },
-          {
-            id: 2,
-            title: '친구관계 고민이 있어요',
-            content: '요즘 친구들과 잘 지내는 방법이 궁금해요. 조언 부탁드려요!',
-            authorName: '익명',
-            categoryName: '친구관계',
-            viewCount: 35,
-            answerCount: 6,
-            upvotes: 9,
-            createdAt: '5시간 전',
-            isHot: false
-          },
-          {
-            id: 3,
-            title: '영어 단어 암기 꿀팁 공유합니다',
-            content: '제가 쓰던 영어 단어 암기법을 공유해요. 정말 효과적이에요!',
-            authorName: '이선배',
-            categoryName: '영어',
-            viewCount: 28,
-            answerCount: 5,
-            upvotes: 12,
-            createdAt: '7시간 전',
-            isSenior: true
-          }
-        ],
-        new: [
-          {
-            id: 4,
-            title: '과학 실험 보고서 작성법 알려주세요',
-            content: '내일까지 제출해야 하는데 어떻게 써야 할지 모르겠어요',
-            authorName: '박학생',
-            categoryName: '과학',
-            viewCount: 3,
-            answerCount: 0,
-            upvotes: 1,
-            createdAt: '2분 전',
-            isNew: true
-          },
-          {
-            id: 5,
-            title: '체육대회 준비 어떻게 하나요?',
-            content: '다음주에 체육대회가 있는데 준비할 게 뭐가 있을까요?',
-            authorName: '최학생',
-            categoryName: '학교생활',
-            viewCount: 5,
-            answerCount: 1,
-            upvotes: 2,
-            createdAt: '15분 전',
-            isNew: true
-          }
-        ],
-        trending: [
-          {
-            id: 6,
-            title: '시험 기간 공부법 총정리 📚',
-            content: '시험 기간에 효율적으로 공부하는 방법을 정리해봤어요',
-            authorName: '정선배',
-            categoryName: '공부법',
-            viewCount: 56,
-            answerCount: 10,
-            upvotes: 12,
-            createdAt: '1일 전',
-            isTrending: true,
-            isSenior: true
-          }
-        ]
-      }
+      // 새로운 더미 데이터 제너레이터 사용
+      const mockData = getMockData()
 
       setQuestions(mockData[activeTab] || mockData.hot)
       setLoading(false)
@@ -129,14 +51,7 @@ function Home() {
   }
 
   const fetchTrendingTopics = () => {
-    // 12명 유저 기준 트렌드
-    setTrendingTopics([
-      { id: 1, name: '시험공부', count: 8, trend: 'up' },
-      { id: 2, name: '친구관계', count: 6, trend: 'up' },
-      { id: 3, name: '수학', count: 5, trend: 'same' },
-      { id: 4, name: '영어단어', count: 4, trend: 'down' },
-      { id: 5, name: '학교생활', count: 3, trend: 'up' }
-    ])
+    setTrendingTopics(getMockTrendingTopics())
   }
 
   const handleUpvote = (e, questionId) => {
@@ -182,7 +97,7 @@ function Home() {
                 <div className="stat-label">답변 수</div>
               </div>
               <div className="stat-box">
-                <div className="stat-number">12</div>
+                <div className="stat-number">{MEMBER_COUNT}</div>
                 <div className="stat-label">회원</div>
               </div>
             </div>
